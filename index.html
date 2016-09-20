@@ -89,15 +89,6 @@
 			<div id="modeVoteContainer">
 				<div class="modeVoteItem" onclick="castVote(0)"> Classic <span id="modeVotes0">(0)</span></div>
 			</div>
-			<div id="endAdContainer">
-				<ins class="adsbygoogle"
-				     style="display:inline-block;width:728px;height:90px"
-				     data-ad-client="ca-pub-4505182558467475"
-				     data-ad-slot="8154308549"></ins>
-				<script>
-				    (adsbygoogle = window.adsbygoogle || []).push({});
-				</script>
-			</div>
 		</div>
 	</div>
 	
@@ -124,17 +115,6 @@
 			</div>
 			<div class="greyMenuText" id="instructionsText">				
 			</div>
-				
-			<!-- ADVERTISEMENT -->
-			<div id="adContainer">
-				<ins class="adsbygoogle"
-				     style="display:inline-block;width:336px;height:280px"
-				     data-ad-client="ca-pub-4505182558467475"
-				     data-ad-slot="4677634944"></ins>
-				<script>
-					(adsbygoogle = window.adsbygoogle || []).push({});
-				</script>
-			</div>
 		</div>
 	</div>
 	
@@ -145,13 +125,6 @@
 			| <span class="spanLink">settings</span>
 	</div>
  	<div id="linksContainer">
- 	
- 		<!-- SOCIAL BUTTONS -->
-		<div id="shareContainer">   
-			<div class="fb-like" data-href="https://www.facebook.com/driftinio/" 
-				data-layout="button_count" data-action="like" data-show-faces="true" data-share="true"></div>
-		</div>
-		
 		<!-- CURRENT MODE -->
 		<div id="currentModeText">
 			Loading...
@@ -160,14 +133,6 @@
 		<!-- LOBBY KEY -->
 		<div class="spanLink" id="lobbyKey" onclick="loadPartyKey();">
 			<i class="material-icons" style="vertical-align: middle; color:#fff;">&#xE8D3;</i> <span id="lobbyKeyText">create party</span>
-		</div>
-		
-		<!-- FOLLOW BUTTONS -->
-		<div id="followText">Unlock a secret class:</div>
-		<div id="twitterFollBt">
-			<a class="twitter-share-button" href="https://twitter.com/intent/tweet?text=Check%20out%20this%20new%20io%20racing%20game%20at%20http://driftin.io%20%23iogames%20%23gaming">Share</a>
-			<a href="https://twitter.com/SidneydeVries12" class="twitter-follow-button" data-show-screen-name="false" data-show-count="true">Follow
-			</a>
 		</div>
 		
 		<!-- EXTERNAL LINKS -->
@@ -181,18 +146,11 @@
 	</div>
 
 	<!-- LOAD MAIN SCRIPTS -->
-	<script src="http://cdn.socket.io/socket.io-1.4.5.js"></script>
+	<script src="socket.io-1.4.5.js"></script>
 	<script src="js/utils/utils.js"></script>
 	<script src="js/game.js"></script>
 	<script>
-		twttr.ready(function (twttr) {
-		    twttr.events.bind('follow', function(event) {
-		        unlockSecret(0);
-		    });
-		    twttr.events.bind('tweet', function(event) {
-		        unlockSecret(0);
-		    });
-		});
+        unlockSecret(0);
 	</script>
 </body>
 </html>

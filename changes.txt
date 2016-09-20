@@ -1,0 +1,253 @@
+Driftin.io Changelog:
+
+Planned Features (Suggestions from /v/ and reddit):
+> Add Global Leaderboard: Best Time, Most Kills, Best Lap Time
+> settings menu
+> help menu and guide
+> arena mode (Derby)
+> different types of tracks
+> skins and trails for your vehicle
+
+v0.41 (CURRENT) (19/09/2016):
+> Moved UI around to make room for the Chat
+> Added Chat
+> Fixed End Board Undefined Bug
+> Added another secret class (This one is harder to find &3)
+> You can Hide the Chat by pressing C
+
+v0.4 (16/09/2016):
+> Optimizations
+> Fixed Server Error
+> Reconfigured server timeout and HTTP connection
+> Changed ELB configs to reduce disconnects
+
+v0.39 (15/09/2016):
+> Changed menu class Display
+> Added Auto Reconnection
+> Moved to TCP protocol (HTTP has problems with websockets) &1
+
+v0.38 (14/09/2016):
+> Fixed Share Link
+> Optimizations
+
+v0.37 (14/09/2016):
+> Added wiki Link
+> Added Death Stat to Leaderboard
+> Renamed Piercer Ability to Force Push
+> Added Player Class to Leaderboard
+> Increased Deprived Boost to 100
+> Reduced Deprived HP
+
+v0.36 (13/09/2016):
+> Added discord link back to menu
+> Added Share Button to menu
+> Fixed invis Bug
+> Buffed Bully boost regen
+> Reduced Bandwidth
+> Added Deprived Class Back
+
+v0.35 (12/09/2016):
+> Fixed Rooms Issue (Max 16 Players per Room)
+> Bandwidth Optimization
+> Optimized Server CPU usage
+
+v0.34 (9/09/2016):
+> Fix Server Full Issue
+> CPU Optimizations
+
+v0.33 (7/09/2016):
+> Added Blobber Class
+> Bug Fixes
+> Increased Sludge Time
+> Added Reload Speed Upgrade
+
+v0.32 (6/09/2016):
+> Pushing a player into a wall will now award you with a kill
+> Anti Bot Scripts
+> Increased Ambulamp Health and Healing Power
+> Client Side optimizations
+
+v0.31 (4/09/2016):
+> Saving Class Selection in Local Storage
+> Added Damage Flash
+> Increased Track Size
+> Added Facebook button
+> Changed some links
+> Changed server configs to allow for more players
+> Bug Fixes in Lobby Logic
+
+v0.30 (2/09/2016):
+> Increased Buster Damage and Added Health Regen Upgrade
+> Increased Hazard Damage and Added Size Upgrade Back
+> Increased Flash Speed Again
+> Reduced Piercer Base Speed
+
+v0.29 (2/09/2016):
+> Reduced crash damage of piercer
+> Reduced Repair Kit Power
+> Ambulamp now Awards points for Killing
+> Nerfed Star HP and Boost
+> Increased Drift for Piercer
+> Replaced Class difficulty with Class Type
+> Added Health Regen to Most Classes
+> General Balancing (Sorry but I want to make sure the balance is right)
+
+v0.28 (2/09/2016):
+> Made track wider so it can fit more players
+> Increased Spawn protection timer 
+> Aligned the red/white lines around the track
+> Optimized some server stuff
+
+v0.27 (2/09/2016):
+> Reverted Menu Color
+> Increased Buster Damage Upgrade Slightly
+> Reduced Piercer Health a bit
+
+v0.26 (1/09/2016):
+> Added Server Cap to reduce lag
+> Fixed Bot exploit
+> Changed some colors on menu UI
+> Reduced Buster Damage but Increased his Turn Speed
+
+v0.25 (1/09/2016):
+> Added more Items and Abilities
+> Added Piercer Class Back
+> Added Difficulty rating to class description
+> Highlighted Items in Actionbar
+> Added Repair Kit to Buster
+
+v0.24 (31/08/2016):
+> You can now Damage yourself again with projectiles
+> Ambulamp can now bounce health pellets off walls to heal itself
+> Increased Ambulamp View Distance
+> Fixed Cooldown Display
+> Fixed some Issues with the Upgrades
+> Changed Reverse key to Q and Made it a Toggle
+> Added More Boost to Buster by Default
+> Fixed a Bug on the Server that caused you to disconnect
+> Separated Abilities and Items (So the ambulamp can buy items for example)
+> Items are now used when you buy them
+> Fixed Bug where you could shoot through walls
+> Improved Room Joining Logic
+
+v0.23 (31/08/2016):
+> Nerfed Hazard (Reduced Damage and Removed Boost Regen)
+> Nerfed Buster (Reduced Damage and Re-Wrote turn speed code)
+> Reduced Bully Scale by 2 and Increased his Default Speed
+> Increased Star Power Duration
+> Added Server Rooms. This should reduce the number of players per Lobby
+> RIP Driftball
+
+v0.22 (30/08/2016):
+> Added new Mode: (Driftball) Score 5 Goals. This is a team based mode
+> Added Mode Voting: You can vote which mode you would like to play at the end
+  of every game.
+> Fixed Bug where game over board gets stuck at (00:00) sometimes
+> Increased Ambulamp Bullet speed
+> Added Move Speed Upgrade to Ambulamp
+> You no longer get Points for killing an Ambulamp
+> Added Facebook Button
+> Optimized Bandwidth
+> Optimized Server Update Loop and Collisions
+> Removed Server Best Time for now
+> Added Mode Display to Main Menu
+> Changed Party Mode Icon color to White
+> Reduced Game Over Timer
+> Fixed Bug where you could still shoot after the game ended
+> Made menu darkener darker
+> Updated Spawn Point logic
+
+v0.21 (29/08/2016):
+> Added basic party system. Press party button in bottom right and send the new URL to a friend
+> You can no longer buy items you already have
+> Nerfed Buster HP and Slightly increased his move Speed
+> Changed Ambulamp Description
+> Fixed notification text size for zoomed out classes
+
+v0.2 (28/08/2016):
+> Added bigger view distance for faster cars
+> Fixed HTML name exploit
+
+v0.19 (27/08/2016):
+> Nerfed Buster
+> Fixed Bug where game freezes when pressing a wrong numkey
+> Added Turn speed back in
+
+v0.18 (26/08/2016):
+> Removed Phaser/Piercer
+> Added Star Class
+> Fixed some server issues
+> Added right click to class picker
+> Buffed Bully default HP
+> Removed turn speed for now. It just feels to slow non responsive
+> Added some optimizations to the server
+
+v0.17 (26/08/2016):
+> Additional Smoothing
+> Added compression to state data
+> Optimized performance
+> Reduced Buster Mass and Increased his HP
+> Increased reverse Speed
+> Added Server top lap to Menu
+> Added piercer Class
+
+v0.16 (25/08/2016):
+> Added reverse/brake with Shift
+> Optimized Rendering again
+> Slightly increased Flash starting HP
+> Buffed buster again
+> Softened interpolation
+> Fixed next round timer stuck at 00:00 glitch
+
+v0.15 (24/08/2016):
+> 60FPS BRA
+> Fixed Fade out Bug
+> Added ambulamp class
+> Projectiles can now affect the owner as well
+> Buffed Buster cannon Damage
+> You can now use items with right click for convenience
+> Improved Interpolation slightly
+> Reduced bandwidth
+
+v0.14 (24/08/2016):
+> Increased Firerate and Turnspeed of Buster
+> Reduced cannonball damage
+> Added basic death animation
+> Removed health regen from Hazard and increased his boost consumption
+> Decreased Racer speed slightly
+> Fixed some performance issues
+> Added changelog
+> Added twitter button
+> Made track slightly wider
+
+v0.13 (23/08/2016):
+> Added 2 new classes
+> Removed 1 class
+> Fixed game over board stat reset
+> Fixed total time and best time display
+> Added cannonball 
+> Moved all gameobjects into one array
+> Reduced I/O frequency
+> Reduced server restart frequency
+> Changed max laps to 20
+
+v0.12 (21/08/2016):
+> Added win condition after 20 laps
+> Added 3 new classes
+> Optimized server side configs
+> Added new upgrade for boost
+
+v0.11 (19/08/2016):
+> Fixed Respawn spam exploit
+> Fixed naming spam exploit
+> Re-Balanced Bully health
+
+v0.1 (18/08/2016) Initial Release:
+> Added Racer and Bully and basic racing mechanics
+> Fixed Bug with Lap counter
+> Added basic upgrades to each class
+
+v0.0 (xx/xx/1995) 
+> 
+
+&08xxxx=classIndex
