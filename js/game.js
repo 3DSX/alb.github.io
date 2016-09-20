@@ -100,7 +100,7 @@ window.onload = function() {
     }
     ;
     console.log(lobbyURLIP);
-    $.get("/getIP", {
+    $.get("http://driftin.io/getIP", {
         sip: lobbyURLIP
     }, function(a) {
         port = a.port;
