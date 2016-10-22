@@ -1,4 +1,6 @@
 var targetFPS = 60, delta, delta2, currentTime, oldTime = 0, gameState = 0, gameOver = !1, socket, port;
+var cannon_reloaded = true;
+var idling_angle = 0;
 Number.prototype.round = function(a) {
     return +this.toFixed(a)
 }
@@ -80,6 +82,17 @@ function chat(data) {
     socket.emit("c", data);
 }
 var hasStorage = "undefined" !== typeof Storage;
+class FakeLocalStorage {
+    constructor() {
+        this._local_storage = new Map();
+    }
+    getItem(id) {
+        return null;
+    }
+    setItem(id, value) {
+    }
+}
+localStorage = new FakeLocalStorage();
 if (hasStorage) {
     var cid = localStorage.getItem("sckt");
     cid || (cid = UTILS.getUniqueID(),
@@ -263,6 +276,12 @@ function setupSocket() {
         $("#abilityCooldown").animate({
             height: "0%"
         }, a.cd)) : $("#abilityCooldown").css("height", "0")) : useAbilityContainer.style.display = "none"
+        if (a && a.cd) {
+            window.cannon_reloaded = false;
+            setTimeout(function() {
+                window.cannon_reloaded = true;
+            }, a.cd);
+        }
     });
     socket.on("6", updateLapInfo);
     socket.on("7", function(a, b, c) {
@@ -734,31 +753,41 @@ function sendTarget(a) {
     if (!current_obj) {
         current_obj = player;
     }
-    !gameOver && player && !player.dead && (a || b - lastSent > sendFrequency) && (target[1] = MathSQRT(MathPOW(mouseY - screenHeight / 2, 2) + MathPOW(mouseX - screenWidth / 2, 2)),
-    target[1] = MathSQRT(MathPOW(current_obj.localY - player.localY, 2) + MathPOW(current_obj.localX - player.localX, 2)),
-    target[1] *= MathMIN(maxScreenWidth / screenWidth, maxScreenHeight / screenHeight),
-    target[0] = MathATAN2(mouseY - screenHeight / 2, mouseX - screenWidth / 2),
-    target[0] = MathATAN2(current_obj.y - player.y, current_obj.x - player.x),
-    target[0] = target[0].round(2),
-    target[1] = target[1].round(2),
-    //target[2] = Math.random() < 0.5,
-    //target[3] = Math.random() < 0.5,
-    lastSent = b,
+    !gameOver && player && !player.dead && (a || b - lastSent > sendFrequency) && (lastSent = b,
     (function() {
-        if (!is_tracking && Math.random() > 0.7) {
-            target[0] = (Math.random()*10).round(2);
-            target[1] = (Math.random()*10).round(2);
+        if (!is_tracking && Math.random() > 0.5) {
+            //target[0] = idling_angle;
+            idling_angle += 4*MathPI/targetFPS;
+            if (idling_angle >= 2*MathPI) {
+                idling_angle = 0;
+            }
+            //target[1] = (Math.random()*10).round(2) + 20;
+        }
+        if (is_tracking) {
+            target[1] = MathSQRT(MathPOW(mouseY - screenHeight / 2, 2) + MathPOW(mouseX - screenWidth / 2, 2));
+            target[1] = MathSQRT(MathPOW(current_obj.localY - player.localY, 2) + MathPOW(current_obj.localX - player.localX, 2));
+            target[1] *= MathMIN(maxScreenWidth / screenWidth, maxScreenHeight / screenHeight);
+            target[0] = MathATAN2(mouseY - screenHeight / 2, mouseX - screenWidth / 2);
+            target[0] = MathATAN2(current_obj.y - player.y, current_obj.x - player.x);
+            target[0] = target[0].round(2);
+            target[1] = target[1].round(2);
+            idling_angle = target[0];
+            if (target[1] > 300) {
+                target[2] = 1;
+            } else {
+                target[2] = 0;
+            }
+        } else {
+            target[2] = 0;
         }
         if (is_tracking && Math.random() < 0.5) {
             socket.emit("2", getRandomInt(49, 55)-49);
         }
     })(),
-    (function() {
-        if (is_tracking && Math.random() < 0.5) {
-            socket.emit("3");
-        }
-    })(),
-    socket.emit("1", target))
+    socket.emit("1", target));
+    if (is_tracking && cannon_reloaded && player.spawnProt == 0) {
+        socket.emit("3");
+    }
 }
 var maxNotifs = 2
   , bestTime = null
