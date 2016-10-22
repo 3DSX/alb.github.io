@@ -68,12 +68,16 @@ var chatInput = document.getElementById("chatInput")
   , instructionsIndex = UTILS.randInt(0, instructionsList.length - 1)
   , randomLoadingTexts = "starting engines...;prepare to drive...;engaging flux capacitors...;pumping gas...;buckle up buckeroo...;playing eurobeat...".split(";");
 function addChatItem(a, b, c) {
+    console.log("CHAT:", a, b, c)
     var d = document.createElement("li");
     c ? (d.className = "sysMsg",
     d.innerHTML = b) : d.innerHTML = "[" + a + "] <span class='grayMsg'>" + b + "</span>";
     for (; 120 < chatList.clientHeight; )
         chatList.removeChild(chatList.childNodes[0]);
     chatList.appendChild(d)
+}
+function chat(data) {
+    socket.emit("c", data);
 }
 var hasStorage = "undefined" !== typeof Storage;
 if (hasStorage) {
@@ -150,6 +154,9 @@ window.onkeyup = function(a) {
     sendTarget(!0))))
 }
 ;
+function getRandomInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+};
 function setupSocket() {
     socket.on("connect_error", function() {
         lobbyURLIP ? kickPlayer("Connection failed. Please check your lobby ID.") : kickPlayer("Connection failed. Please check your internet connection.")
@@ -282,6 +289,7 @@ var updateObjectData = function(a, b) {
     if (a)
         a.visible = !0,
         updateOrPushObject(a),
+        update_position_time(a),
         delete a;
     else if (b) {
         for (var c = 0; c < gameObjects.length; ++c)
@@ -290,6 +298,7 @@ var updateObjectData = function(a, b) {
             var d = getPlayerIndex(b[c]);
             null != d && (gameObjects[d].x = b[c + 1],
             gameObjects[d].y = b[c + 2],
+            update_position_time(b),
             gameObjects[d].dir = b[c + 3] || gameObjects[d].dir,
             gameObjects[d].visible = !0);
             c += 4
@@ -366,8 +375,8 @@ function enterGame() {
     socket && (gameOver = !1,
     showMainMenuText(randomLoadingTexts[UTILS.randInt(0, randomLoadingTexts.length - 1)]),
     socket.emit("respawn", {
-        name: userNameInput.value,
-        classIndex: classIndex
+        name: "hai",
+        classIndex: 4
     }),
     mainCanvas.focus())
 }
@@ -382,6 +391,16 @@ function leaveGame() {
     toggleGameUI(!1);
     toggleMenuUI(!0);
     endBoardContainer.style.display = "none"
+    enter_event = new Event("keyup");
+    enter_event.keyCode = 13;
+    setTimeout(function() {
+        enter_event = new Event("keyup", {"bubbles": true});
+        enter_event.keyCode = 13;
+        userNameInput.dispatchEvent(enter_event);
+        enter_event = new Event("mouseup", {"bubbles": true});
+        enter_event.button = 1;
+        enterGameButton.dispatchEvent(enter_event);
+    }, 1000);
 }
 var maxFlashAlpha = .3
   , playerCanvas = document.createElement("canvas")
@@ -669,14 +688,76 @@ function updateMenuLoop(a) {
 }
 var sendFrequency = 1E3 / 24
   , lastSent = 0;
+var last_player_position = new WeakMap();
+var cannon_speed = 50; // pixels per second
+function compute_distance(other_obj) {
+    return MathSQRT(MathPOW(other_obj.localX - player.localX, 2) + MathPOW(other_obj.localY - player.localY, 2));
+}
+var last_position_time = new WeakMap();
+var ignore_sid = new Set();
+function is_targetable(player_obj) {
+    return player_obj != null && player_obj.isPlayer == true && player_obj.sid != player.sid && player_obj.visible && !player_obj.dead && player_obj.spawnProt == 0 && !ignore_sid.has(player_obj.sid)
+}
+function update_position_time(player_obj) {
+    if (is_targetable(player_obj)) {
+        if (!last_position_time.has(player_obj)) {
+            last_position_time.set(player_obj, new Object());
+        }
+        let current_data = last_position_time.get(player_obj);
+        current_data.x = player_obj.x;
+        current_data.y = player_obj.y;
+        current_data.time = Date.now();
+    }
+}
+function get_player_ray(player_obj) {
+    
+}
+function get_target_location(player_obj) {
+}
 function sendTarget(a) {
     var b = currentTime;
+    var is_tracking = false;
+    if (!gameOver && player && !player.dead && (a || b - lastSent > sendFrequency)) {
+        var current_min = Infinity;
+        var current_obj = null;
+        for (let player_obj of gameObjects) {
+            if (is_targetable(player_obj)) {
+                let new_min = compute_distance(player_obj);
+                if (new_min < current_min) {
+                    current_min = new_min;
+                    current_obj = player_obj;
+                }
+            }
+        }
+    }
+    is_tracking = Boolean(current_obj);
+    if (!current_obj) {
+        current_obj = player;
+    }
     !gameOver && player && !player.dead && (a || b - lastSent > sendFrequency) && (target[1] = MathSQRT(MathPOW(mouseY - screenHeight / 2, 2) + MathPOW(mouseX - screenWidth / 2, 2)),
+    target[1] = MathSQRT(MathPOW(current_obj.localY - player.localY, 2) + MathPOW(current_obj.localX - player.localX, 2)),
     target[1] *= MathMIN(maxScreenWidth / screenWidth, maxScreenHeight / screenHeight),
     target[0] = MathATAN2(mouseY - screenHeight / 2, mouseX - screenWidth / 2),
+    target[0] = MathATAN2(current_obj.y - player.y, current_obj.x - player.x),
     target[0] = target[0].round(2),
     target[1] = target[1].round(2),
+    //target[2] = Math.random() < 0.5,
+    //target[3] = Math.random() < 0.5,
     lastSent = b,
+    (function() {
+        if (!is_tracking && Math.random() > 0.7) {
+            target[0] = (Math.random()*10).round(2);
+            target[1] = (Math.random()*10).round(2);
+        }
+        if (is_tracking && Math.random() < 0.5) {
+            socket.emit("2", getRandomInt(49, 55)-49);
+        }
+    })(),
+    (function() {
+        if (is_tracking && Math.random() < 0.5) {
+            socket.emit("3");
+        }
+    })(),
     socket.emit("1", target))
 }
 var maxNotifs = 2
@@ -792,11 +873,13 @@ function updateScreenShake(a) {
 }
 var kickReason = null ;
 function kickPlayer(a) {
+    //location.reload();
+    //return;
     leaveGame();
     kickReason || (kickReason = a);
     showMainMenuText(kickReason);
     socket.close();
-    window.history.pushState("", "Driftin.io", "/")
+    //window.history.pushState("", "Driftin.io", "/")
 }
 function updateOrPushObject(a) {
     var b = getPlayerIndex(a.sid);
@@ -879,7 +962,7 @@ function callUpdate() {
     currentTime = Date.now();
     var a = currentTime - then;
     a > 1E3 / targetFPS && (then = currentTime - a % (1E3 / targetFPS),
-    updateGameLoop(a),
+    updateGameLoop(a),sendTarget(0),
     updateMenuLoop(a))
 }
 callUpdate();
