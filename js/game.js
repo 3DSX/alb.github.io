@@ -786,7 +786,8 @@ function sendTarget(a) {
     })(),
     socket.emit("1", target));
     if (is_tracking && cannon_reloaded && player.spawnProt == 0) {
-        socket.emit("3");
+        cannon_reloaded = false;
+        setTimeout(function() { socket.emit("3"); }, 10);
     }
 }
 var maxNotifs = 2
