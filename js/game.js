@@ -1,6 +1,6 @@
 var targetFPS = 60, delta, delta2, currentTime, oldTime = 0, gameState = 0, gameOver = !1, socket, port;
 var cannon_reloaded = true;
-var idling_angle = 0;
+var upgrades_available = false;
 class FakeLocalStorage {
     constructor() {
         this._local_storage = new Map();
@@ -117,11 +117,13 @@ window.onload = function() {
         enterGame()
     }
     ;
-    console.log(lobbyURLIP);
+    console.log("lobby URL IP: " + lobbyURLIP);
     $.get("http://driftin.io/getIP", {
         sip: lobbyURLIP
     }, function(a) {
         port = a.port;
+        console.log("server IP: " + a.ip);
+        console.log("server port: " + a.port);
         socket || (socket = io.connect("http://" + a.ip + ":" + a.port, {
             "connect timeout": 3E3,
             reconnection: !0,
@@ -253,7 +255,9 @@ function setupSocket() {
         upgradesList.innerHTML = "";
         upgradesHeaders.innerHTML = "";
         upgradesInfo.style.display = "none";
+        window.upgrades_available = false;
         if (0 < b) {
+            window.upgrades_available = true;
             for (var d = a = "", e = 0; e < c.length; ++e) {
                 var d = d + ("<div class='upgradeIndx'>" + (e + 1) + "</div>")
                   , f = "";
@@ -375,7 +379,7 @@ var playerClasses = [{
 hasStorage && localStorage.getItem("scrt0") && unlockSecret(0);
 function unlockSecret(a) {
     a || unlockedSecret0 || (unlockedSecret0 = 1,
-    followText.innerHTML = "Thank you for playing",
+    //followText.innerHTML = "Thank you for playing",
     playerClasses.push({
         name: "Star",
         diff: "Speed <span class='greyMenuText'>\u25a0\u25a0</span></br>Defense <span class='greyMenuText'>\u25a0\u25a0</span></br>Damage <span class='greyMenuText'>\u25a0\u25a0\u25a0</span></br>Handling <span class='greyMenuText'>\u25a0\u25a0\u25a0</span></br>Special <span class='greyMenuText'>Star Power</span>"
@@ -399,7 +403,7 @@ function enterGame() {
     socket && (gameOver = !1,
     showMainMenuText(randomLoadingTexts[UTILS.randInt(0, randomLoadingTexts.length - 1)]),
     socket.emit("respawn", {
-        name: "hai",
+        name: "yourself",
         classIndex: 4
     }),
     mainCanvas.focus())
@@ -740,7 +744,7 @@ function updateMenuLoop(a) {
 var sendFrequency = 1E3 / 24
   , lastSent = 0;
 var last_player_position = new WeakMap();
-var cannon_speed = 1; // pixels(?) per millisecond
+var cannon_speed = 1/2; // pixels(?) per millisecond
 function compute_distance(other_obj) {
     return MathSQRT(MathPOW(other_obj.localX - player.localX, 2) + MathPOW(other_obj.localY - player.localY, 2));
 }
@@ -880,23 +884,24 @@ function sendTarget(a) {
     !gameOver && player && !player.dead && (a || b - lastSent > sendFrequency) && (lastSent = b,
     (function() {
         if (!is_tracking && Math.random() > 0.5) {
-            target[0] = idling_angle;
-            idling_angle += 4*MathPI/targetFPS;
-            if (idling_angle >= 2*MathPI) {
-                idling_angle = 0;
-            }
-            target[1] = (Math.random()*10).round(2) + 20;
+            // Make idling position the middle of start line
+            let idle_x = 0;
+            let idle_y = map.heightH - map.trackWidth / 2;
+            target[0] = MathATAN2(idle_y - player.y, idle_x - player.x);
+            target[1] = (Math.random()*10).round(2) + 400;
+            target[0] = target[0].round(2);
+            target[1] = target[1].round(2);
         }
         if (is_tracking) {
             target[1] = MathSQRT(MathPOW(mouseY - screenHeight / 2, 2) + MathPOW(mouseX - screenWidth / 2, 2));
             target[1] = MathSQRT(MathPOW(current_obj.localY - player.localY, 2) + MathPOW(current_obj.localX - player.localX, 2));
+            target[1] *= 9/10;
             target[1] *= MathMIN(maxScreenWidth / screenWidth, maxScreenHeight / screenHeight);
             //target[0] = MathATAN2(mouseY - screenHeight / 2, mouseX - screenWidth / 2);
             //target[0] = MathATAN2(current_obj.y - player.y, current_obj.x - player.x);
             target[0] = get_aiming_angle(current_obj);
             target[0] = target[0].round(2);
             target[1] = target[1].round(2);
-            idling_angle = target[0];
             if (target[1] > 300) {
                 target[2] = 1;
             } else {
@@ -905,14 +910,13 @@ function sendTarget(a) {
         } else {
             target[2] = 0;
         }
-        if (is_tracking && Math.random() < 0.5) {
+        if (upgrades_available && is_tracking && Math.random() < 0.5) {
             socket.emit("2", getRandomInt(49, 55)-49);
         }
     })(),
     socket.emit("1", target));
     if (is_tracking && cannon_reloaded && player.spawnProt == 0) {
-        cannon_reloaded = false;
-        setTimeout(function() { socket.emit("3"); }, 50);
+        socket.emit("3");
     }
 }
 var maxNotifs = 2
