@@ -8,6 +8,25 @@ Planned Features (Suggestions from /v/ and reddit):
 > different types of tracks
 > skins and trails for your vehicle
 
+v0.45 (CURRENT) (26/10/2016):
+> Fixed Teleportation Bug
+> Fixed the lag (Please let me know if it still persists)
+ ** I still have to fix the physics issue on the circle map
+> Fixed projectile collisions with circle map
+
+v0.44 (25/10/2016):
+> Optimizations
+> Increased wall hack duration of secret class
+> Added Circular Map to Rotation (You can get some really good speed with the flash on this map)
+> Fixed Spawn Locations: They are random now
+
+v0.43 (15/10/2016):
+> Added Mobile Version IP Config
+
+v0.42 (24/09/2016):
+> Fixed Several Disconnect Issues
+> Changed port config to round robin
+
 v0.41 (CURRENT) (19/09/2016):
 > Moved UI around to make room for the Chat
 > Added Chat
@@ -219,6 +238,9 @@ v0.14 (24/08/2016):
 > Added changelog
 > Added twitter button
 > Made track slightly wider
+
+v0.14 (24/09/2016):
+> Fixed Disconnect problem by changing port config to round robin
 
 v0.13 (23/08/2016):
 > Added 2 new classes

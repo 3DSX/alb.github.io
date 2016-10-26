@@ -1,17 +1,4 @@
 var targetFPS = 60, delta, delta2, currentTime, oldTime = 0, gameState = 0, gameOver = !1, socket, port;
-var cannon_reloaded = true;
-var idling_angle = 0;
-class FakeLocalStorage {
-    constructor() {
-        this._local_storage = new Map();
-    }
-    getItem(id) {
-        return null;
-    }
-    setItem(id, value) {
-    }
-}
-window.localStorage = new FakeLocalStorage();
 Number.prototype.round = function(a) {
     return +this.toFixed(a)
 }
@@ -81,7 +68,6 @@ var chatInput = document.getElementById("chatInput")
   , instructionsIndex = UTILS.randInt(0, instructionsList.length - 1)
   , randomLoadingTexts = "starting engines...;prepare to drive...;engaging flux capacitors...;pumping gas...;buckle up buckeroo...;playing eurobeat...".split(";");
 function addChatItem(a, b, c) {
-    console.log("CHAT:", a, b, c)
     var d = document.createElement("li");
     c ? (d.className = "sysMsg",
     d.innerHTML = b) : d.innerHTML = "[" + a + "] <span class='grayMsg'>" + b + "</span>";
@@ -89,11 +75,7 @@ function addChatItem(a, b, c) {
         chatList.removeChild(chatList.childNodes[0]);
     chatList.appendChild(d)
 }
-function chat(data) {
-    socket.emit("c", data);
-}
-//var hasStorage = "undefined" !== typeof Storage;
-var hasStorage = false;
+var hasStorage = "undefined" !== typeof Storage;
 if (hasStorage) {
     var cid = localStorage.getItem("sckt");
     cid || (cid = UTILS.getUniqueID(),
@@ -118,7 +100,7 @@ window.onload = function() {
     }
     ;
     console.log(lobbyURLIP);
-    $.get("http://driftin.io/getIP", {
+    $.get("/getIP", {
         sip: lobbyURLIP
     }, function(a) {
         port = a.port;
@@ -168,9 +150,6 @@ window.onkeyup = function(a) {
     sendTarget(!0))))
 }
 ;
-function getRandomInt(min, max) {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-};
 function setupSocket() {
     socket.on("connect_error", function() {
         lobbyURLIP ? kickPlayer("Connection failed. Please check your lobby ID.") : kickPlayer("Connection failed. Please check your internet connection.")
@@ -206,7 +185,6 @@ function setupSocket() {
     });
     socket.on("spawn", function(a, b) {
         objectExists(a) ? updateOrPushObject(a) : gameObjects.push(a);
-        update_position_time(a);
         b && (player = a,
         gameState = 1,
         toggleMenuUI(!1),
@@ -235,7 +213,6 @@ function setupSocket() {
         0 >= gameObjects[e].health && gameObjects[e].visible && (gameObjects[e].dead = !0,
         gameObjects[e].deathScaleMult = 1,
         gameObjects[e].deathAlpha = 1),
-        update_position_time(gameObjects[e]),
         d && (gameObjects[e].hitFlash = d));
         player && a == player.sid && (player.health = b,
         player.dead = 0 >= b,
@@ -279,18 +256,11 @@ function setupSocket() {
         $("#abilityCooldown").animate({
             height: "0%"
         }, a.cd)) : $("#abilityCooldown").css("height", "0")) : useAbilityContainer.style.display = "none"
-        if (a && a.cd) {
-            window.cannon_reloaded = false;
-            setTimeout(function() {
-                window.cannon_reloaded = true;
-            }, a.cd);
-        }
     });
     socket.on("6", updateLapInfo);
     socket.on("7", function(a, b, c) {
         a = getPlayerIndex(a);
-        null != a && (gameObjects[a][b] = c);
-        update_position_time(gameObjects[a]);
+        null != a && (gameObjects[a][b] = c)
     });
     socket.on("8", function(a) {
         gameOver = !0;
@@ -309,12 +279,11 @@ function setupSocket() {
     })
 }
 var updateObjectData = function(a, b) {
-    if (a) {
+    if (a)
         a.visible = !0,
         updateOrPushObject(a),
-        update_position_time(a),
         delete a;
-    } else if (b) {
+    else if (b) {
         for (var c = 0; c < gameObjects.length; ++c)
             gameObjects[c].visible || (gameObjects[c].forcePos = 1),
             gameObjects[c].visible = !1;
@@ -324,7 +293,6 @@ var updateObjectData = function(a, b) {
             gameObjects[d].y = b[c + 2],
             gameObjects[d].dir = b[c + 3] || gameObjects[d].dir,
             gameObjects[d].visible = !0);
-            update_position_time(gameObjects[d]);
             c += 4
         }
         delete b
@@ -399,8 +367,8 @@ function enterGame() {
     socket && (gameOver = !1,
     showMainMenuText(randomLoadingTexts[UTILS.randInt(0, randomLoadingTexts.length - 1)]),
     socket.emit("respawn", {
-        name: "hai",
-        classIndex: 4
+        name: userNameInput.value,
+        classIndex: classIndex
     }),
     mainCanvas.focus())
 }
@@ -415,16 +383,6 @@ function leaveGame() {
     toggleGameUI(!1);
     toggleMenuUI(!0);
     endBoardContainer.style.display = "none"
-    enter_event = new Event("keyup");
-    enter_event.keyCode = 13;
-    setTimeout(function() {
-        enter_event = new Event("keyup", {"bubbles": true});
-        enter_event.keyCode = 13;
-        userNameInput.dispatchEvent(enter_event);
-        enter_event = new Event("mouseup", {"bubbles": true});
-        enter_event.button = 1;
-        enterGameButton.dispatchEvent(enter_event);
-    }, 1000);
 }
 var maxFlashAlpha = .3
   , playerCanvas = document.createElement("canvas")
@@ -739,181 +697,15 @@ function updateMenuLoop(a) {
 }
 var sendFrequency = 1E3 / 24
   , lastSent = 0;
-var last_player_position = new WeakMap();
-var cannon_speed = 1; // pixels(?) per millisecond
-function compute_distance(other_obj) {
-    return MathSQRT(MathPOW(other_obj.localX - player.localX, 2) + MathPOW(other_obj.localY - player.localY, 2));
-}
-var last_position_time = new Map();
-var current_position_time = new Map();
-var ignore_sid = new Set();
-function is_targetable(player_obj) {
-    return player_obj != null && player_obj.isPlayer == true && player_obj.sid != player.sid && player_obj.visible && !player_obj.dead && player_obj.spawnProt == 0 && !ignore_sid.has(player_obj.sid)
-}
-function get_current_position_time(player_obj) {
-    if ("sid" in player_obj) {
-        if (current_position_time.has(player_obj.sid)) {
-            return current_position_time.get(player_obj.sid);
-        } else {
-            //console.error("game object " + player_obj.sid + " not in current_position_time!");
-        }
-    } else {
-        console.error("game object has no sid! (current pos time)");
-    }
-}
-function get_last_position_time(player_obj) {
-    if ("sid" in player_obj) {
-        if (last_position_time.has(player_obj.sid)) {
-            return last_position_time.get(player_obj.sid);
-        } else {
-            console.error("game object " + player_obj.sid + " not in last_position_time!");
-        }
-    } else {
-        console.error("game object has no sid! (last pos time)");
-    }
-}
-function update_position_time(player_obj) {
-    if (player_obj && ("sid" in player_obj) && ("x" in player_obj) && ("y" in player_obj)) {
-        if (!current_position_time.has(player_obj.sid)) {
-            let tmp_obj = new Object();
-            tmp_obj.x = 0;
-            tmp_obj.y = 0;
-            tmp_obj.time = 0;
-            let tmp_obj2 = new Object();
-            tmp_obj.x = null;
-            tmp_obj.y = null;
-            tmp_obj.time = null;
-            last_position_time.set(player_obj.sid, tmp_obj);
-            current_position_time.set(player_obj.sid, tmp_obj2);
-        }
-        let current_data = get_current_position_time(player_obj);
-        let previous_data = get_last_position_time(player_obj);
-        if (player_obj.x == current_data.x && player_obj.y == current_data.y) {
-            return;
-        }
-        previous_data.x = current_data.x;
-        previous_data.y = current_data.y;
-        previous_data.time = current_data.time;
-        last_position_time.set(player_obj.sid, previous_data);
-        current_data.x = player_obj.x;
-        current_data.y = player_obj.y;
-        current_data.time = Date.now();
-        current_position_time.set(player_obj.sid, current_data);
-    }
-    //console.log("derp");
-    //console.log(player_obj);
-}
-function get_player_velocity(player_obj) {
-    let velocity_components = new Object();
-    let current = get_current_position_time(player_obj);
-    let previous = get_last_position_time(player_obj);
-    let delta_t = current.time - previous.time;
-    //console.log(current.time);
-    //console.log(Date.now());
-    //console.log("delta t " + delta_t);
-    if (delta_t == 0) {
-        velocity_components.x = 0;
-        velocity_components.y = 0;
-    } else {
-        velocity_components.x = (current.x - previous.x)/delta_t;
-        velocity_components.y = (current.y - previous.y)/delta_t;
-    }
-    return velocity_components;
-}
-function get_player_pos_relative(player_obj) {
-    let result = new Object();
-    result.x = player_obj.x - player.x;
-    result.y = player_obj.y - player.y;
-    return result;
-}
-function get_time_determinant(player_obj) {
-    let v = get_player_velocity(player_obj);
-    let p0 = get_player_pos_relative(player_obj);
-    let b = 2*(v.x*p0.x + v.y*p0.y);
-    let a = Math.pow(v.x, 2) + Math.pow(v.y, 2) - Math.pow(cannon_speed, 2);
-    let c = Math.pow(p0.x, 2) + Math.pow(p0.y, 2);
-    return Math.pow(b, 2) - 4*a*c;
-}
-function get_collision_time(player_obj) {
-    let det = get_time_determinant(player_obj);
-    if (det < 0) {
-        // Ball never hits
-        return null;
-    }
-    let p0 = get_player_pos_relative(player_obj);
-    let v = get_player_velocity(player_obj);
-    let b = 2*(v.x*p0.x + v.y*p0.y);
-    let a = Math.pow(v.x, 2) + Math.pow(v.y, 2) - Math.pow(cannon_speed, 2);
-    //let c = Math.pow(p0.x, 2) + Math.pow(p0.y, 2);
-    // Soonest time is the subtraction version of the quadratic equation
-    return (-b - Math.sqrt(det))/(2*a)
-}
-function get_aiming_angle(player_obj) {
-    let hit_time = get_collision_time(player_obj);
-    //console.log("hit time " + hit_time);
-    let v = get_player_velocity(player_obj);
-    let p0 = get_player_pos_relative(player_obj);
-    return Math.atan2(v.y*hit_time + p0.y, v.x*hit_time + p0.x);
-}
 function sendTarget(a) {
     var b = currentTime;
-    var is_tracking = false;
-    if (!gameOver && player && !player.dead && (a || b - lastSent > sendFrequency)) {
-        var current_min = Infinity;
-        var current_obj = null;
-        for (let player_obj of gameObjects) {
-            if (is_targetable(player_obj)) {
-                if (get_time_determinant(player_obj) >= 0) {
-                    let new_min = compute_distance(player_obj);
-                    if (new_min < current_min) {
-                        current_min = new_min;
-                        current_obj = player_obj;
-                    }
-                }
-            }
-        }
-    }
-    is_tracking = Boolean(current_obj);
-    if (!current_obj) {
-        current_obj = player;
-    }
-    !gameOver && player && !player.dead && (a || b - lastSent > sendFrequency) && (lastSent = b,
-    (function() {
-        if (!is_tracking && Math.random() > 0.5) {
-            target[0] = idling_angle;
-            idling_angle += 4*MathPI/targetFPS;
-            if (idling_angle >= 2*MathPI) {
-                idling_angle = 0;
-            }
-            target[1] = (Math.random()*10).round(2) + 20;
-        }
-        if (is_tracking) {
-            target[1] = MathSQRT(MathPOW(mouseY - screenHeight / 2, 2) + MathPOW(mouseX - screenWidth / 2, 2));
-            target[1] = MathSQRT(MathPOW(current_obj.localY - player.localY, 2) + MathPOW(current_obj.localX - player.localX, 2));
-            target[1] *= MathMIN(maxScreenWidth / screenWidth, maxScreenHeight / screenHeight);
-            //target[0] = MathATAN2(mouseY - screenHeight / 2, mouseX - screenWidth / 2);
-            //target[0] = MathATAN2(current_obj.y - player.y, current_obj.x - player.x);
-            target[0] = get_aiming_angle(current_obj);
-            target[0] = target[0].round(2);
-            target[1] = target[1].round(2);
-            idling_angle = target[0];
-            if (target[1] > 300) {
-                target[2] = 1;
-            } else {
-                target[2] = 0;
-            }
-        } else {
-            target[2] = 0;
-        }
-        if (is_tracking && Math.random() < 0.5) {
-            socket.emit("2", getRandomInt(49, 55)-49);
-        }
-    })(),
-    socket.emit("1", target));
-    if (is_tracking && cannon_reloaded && player.spawnProt == 0) {
-        cannon_reloaded = false;
-        setTimeout(function() { socket.emit("3"); }, 50);
-    }
+    !gameOver && player && !player.dead && (a || b - lastSent > sendFrequency) && (target[1] = MathSQRT(MathPOW(mouseY - screenHeight / 2, 2) + MathPOW(mouseX - screenWidth / 2, 2)),
+    target[1] *= MathMIN(maxScreenWidth / screenWidth, maxScreenHeight / screenHeight),
+    target[0] = MathATAN2(mouseY - screenHeight / 2, mouseX - screenWidth / 2),
+    target[0] = target[0].round(2),
+    target[1] = target[1].round(2),
+    lastSent = b,
+    socket.emit("1", target))
 }
 var maxNotifs = 2
   , bestTime = null
@@ -1028,13 +820,11 @@ function updateScreenShake(a) {
 }
 var kickReason = null ;
 function kickPlayer(a) {
-    //location.reload();
-    //return;
     leaveGame();
     kickReason || (kickReason = a);
     showMainMenuText(kickReason);
     socket.close();
-    //window.history.pushState("", "Driftin.io", "/")
+    window.history.pushState("", "Driftin.io", "/")
 }
 function updateOrPushObject(a) {
     var b = getPlayerIndex(a.sid);
@@ -1117,7 +907,7 @@ function callUpdate() {
     currentTime = Date.now();
     var a = currentTime - then;
     a > 1E3 / targetFPS && (then = currentTime - a % (1E3 / targetFPS),
-    updateGameLoop(a),sendTarget(0),
+    updateGameLoop(a),
     updateMenuLoop(a))
 }
 callUpdate();
