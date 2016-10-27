@@ -1,6 +1,7 @@
 var targetFPS = 60, delta, delta2, currentTime, oldTime = 0, gameState = 0, gameOver = !1, socket, port;
 var cannon_reloaded = true;
 var upgrades_available = false;
+var max_velocity_samples = 3;
 class FakeLocalStorage {
     constructor() {
         this._local_storage = new Map();
@@ -81,7 +82,7 @@ var chatInput = document.getElementById("chatInput")
   , instructionsIndex = UTILS.randInt(0, instructionsList.length - 1)
   , randomLoadingTexts = "starting engines...;prepare to drive...;engaging flux capacitors...;pumping gas...;buckle up buckeroo...;playing eurobeat...".split(";");
 function addChatItem(a, b, c) {
-    console.log("CHAT:", a, b, c)
+    //console.log("CHAT:", a, b, c)
     var d = document.createElement("li");
     c ? (d.className = "sysMsg",
     d.innerHTML = b) : d.innerHTML = "[" + a + "] <span class='grayMsg'>" + b + "</span>";
@@ -213,7 +214,8 @@ function setupSocket() {
         gameState = 1,
         toggleMenuUI(!1),
         toggleGameUI(!0),
-        mainCanvas.focus())
+        mainCanvas.focus());
+        console.log("Current SID: " + player.sid);
     });
     socket.on("cv", function(a, b) {
         document.getElementById("modeVotes" + a).innerHTML = "(" + b + ")"
@@ -237,7 +239,6 @@ function setupSocket() {
         0 >= gameObjects[e].health && gameObjects[e].visible && (gameObjects[e].dead = !0,
         gameObjects[e].deathScaleMult = 1,
         gameObjects[e].deathAlpha = 1),
-        update_position_time(gameObjects[e]),
         d && (gameObjects[e].hitFlash = d));
         player && a == player.sid && (player.health = b,
         player.dead = 0 >= b,
@@ -294,7 +295,9 @@ function setupSocket() {
     socket.on("7", function(a, b, c) {
         a = getPlayerIndex(a);
         null != a && (gameObjects[a][b] = c);
-        update_position_time(gameObjects[a]);
+        if (b == "x" || b == "y") {
+            update_position_time(gameObjects[a]);
+        }
     });
     socket.on("8", function(a) {
         gameOver = !0;
@@ -743,85 +746,83 @@ function updateMenuLoop(a) {
 }
 var sendFrequency = 1E3 / 24
   , lastSent = 0;
-var last_player_position = new WeakMap();
 var cannon_speed = 1/2; // pixels(?) per millisecond
 function compute_distance(other_obj) {
     return MathSQRT(MathPOW(other_obj.localX - player.localX, 2) + MathPOW(other_obj.localY - player.localY, 2));
 }
-var last_position_time = new Map();
-var current_position_time = new Map();
+var enemy_database = new Map();
 var ignore_sid = new Set();
 function is_targetable(player_obj) {
     return player_obj != null && player_obj.isPlayer == true && player_obj.sid != player.sid && player_obj.visible && !player_obj.dead && player_obj.spawnProt == 0 && !ignore_sid.has(player_obj.sid)
 }
-function get_current_position_time(player_obj) {
-    if ("sid" in player_obj) {
-        if (current_position_time.has(player_obj.sid)) {
-            return current_position_time.get(player_obj.sid);
-        } else {
-            //console.error("game object " + player_obj.sid + " not in current_position_time!");
-        }
+function initialize_enemy_info(player_obj) {
+    let current_info = null;
+    if (enemy_database.has(player_obj.sid)) {
+        current_info = enemy_database.get(player_obj.sid);
     } else {
-        console.error("game object has no sid! (current pos time)");
+        current_info = new Object();
+        current_info.last_x = null;
+        current_info.last_y = null;
+        current_info.last_time = null;
     }
-}
-function get_last_position_time(player_obj) {
-    if ("sid" in player_obj) {
-        if (last_position_time.has(player_obj.sid)) {
-            return last_position_time.get(player_obj.sid);
-        } else {
-            console.error("game object " + player_obj.sid + " not in last_position_time!");
-        }
-    } else {
-        console.error("game object has no sid! (last pos time)");
-    }
+    current_info.min_delta_t = Infinity;
+    current_info.velocities = new Array();
+    enemy_database.set(player_obj.sid, current_info);
 }
 function update_position_time(player_obj) {
+    let current_time = Date.now();
     if (player_obj && ("sid" in player_obj) && ("x" in player_obj) && ("y" in player_obj)) {
-        if (!current_position_time.has(player_obj.sid)) {
-            let tmp_obj = new Object();
-            tmp_obj.x = 0;
-            tmp_obj.y = 0;
-            tmp_obj.time = 0;
-            let tmp_obj2 = new Object();
-            tmp_obj.x = null;
-            tmp_obj.y = null;
-            tmp_obj.time = null;
-            last_position_time.set(player_obj.sid, tmp_obj);
-            current_position_time.set(player_obj.sid, tmp_obj2);
+        if (!enemy_database.has(player_obj.sid) || !player_obj.visible) {
+            initialize_enemy_info(player_obj);
         }
-        let current_data = get_current_position_time(player_obj);
-        let previous_data = get_last_position_time(player_obj);
-        if (player_obj.x == current_data.x && player_obj.y == current_data.y) {
-            return;
+        let enemy_info = enemy_database.get(player_obj.sid);
+        if (enemy_info.velocities.length >= max_velocity_samples) {
+            initialize_enemy_info(player_obj);
+            enemy_info = enemy_database.get(player_obj.sid);
         }
-        previous_data.x = current_data.x;
-        previous_data.y = current_data.y;
-        previous_data.time = current_data.time;
-        last_position_time.set(player_obj.sid, previous_data);
-        current_data.x = player_obj.x;
-        current_data.y = player_obj.y;
-        current_data.time = Date.now();
-        current_position_time.set(player_obj.sid, current_data);
+        //if (player_obj.x == enemy_info.last_x && player_obj.y == enemy_info.last_y) {
+        //    return;
+        //}
+        let delta_t = current_time - enemy_info.last_time;
+        if (enemy_info.last_time == null) {
+            delta_t = Infinity;
+        }
+        enemy_info.last_time = current_time;
+        let velocity_components = new Object();
+        if (delta_t == 0) {
+            velocity_components.x = 0;
+            velocity_components.y = 0;
+            velocity_components.delta_t = Infinity;
+        } else {
+            velocity_components.x = (player_obj.x - enemy_info.last_x)/delta_t;
+            velocity_components.y = (player_obj.y - enemy_info.last_y)/delta_t;
+            velocity_components.delta_t = delta_t;
+            if (delta_t < enemy_info.min_delta_t) {
+                enemy_info.min_delta_t = delta_t;
+            }
+        }
+        enemy_info.velocities.push(velocity_components);
+        enemy_info.last_x = player_obj.x;
+        enemy_info.last_y = player_obj.y;
     }
-    //console.log("derp");
-    //console.log(player_obj);
 }
 function get_player_velocity(player_obj) {
-    let velocity_components = new Object();
-    let current = get_current_position_time(player_obj);
-    let previous = get_last_position_time(player_obj);
-    let delta_t = current.time - previous.time;
-    //console.log(current.time);
-    //console.log(Date.now());
-    //console.log("delta t " + delta_t);
-    if (delta_t == 0) {
-        velocity_components.x = 0;
-        velocity_components.y = 0;
-    } else {
-        velocity_components.x = (current.x - previous.x)/delta_t;
-        velocity_components.y = (current.y - previous.y)/delta_t;
+    let enemy_info = enemy_database.get(player_obj.sid);
+    let x_average_num = 0;
+    let y_average_num = 0;
+    let average_den = 0;
+    for (let current_velocity of enemy_info.velocities) {
+        let weight = current_velocity.delta_t/enemy_info.min_delta_t;
+        x_average_num += current_velocity.x*weight;
+        y_average_num += current_velocity.y*weight;
+        average_den += weight;
     }
+    if (average_den == 0) {
+        average_den = Infinity;
+    }
+    let velocity_components = new Object();
+    velocity_components.x = x_average_num/average_den;
+    velocity_components.y = y_average_num/average_den;
     return velocity_components;
 }
 function get_player_pos_relative(player_obj) {
@@ -854,7 +855,6 @@ function get_collision_time(player_obj) {
 }
 function get_aiming_angle(player_obj) {
     let hit_time = get_collision_time(player_obj);
-    //console.log("hit time " + hit_time);
     let v = get_player_velocity(player_obj);
     let p0 = get_player_pos_relative(player_obj);
     return Math.atan2(v.y*hit_time + p0.y, v.x*hit_time + p0.x);
@@ -868,7 +868,10 @@ function sendTarget(a) {
         for (let player_obj of gameObjects) {
             if (is_targetable(player_obj)) {
                 if (get_time_determinant(player_obj) >= 0) {
-                    let new_min = compute_distance(player_obj);
+                    //let new_min = compute_distance(player_obj);
+                    let new_min = (player_obj.health/player_obj.maxHealth)*2000;
+                    new_min += (20 - player_obj.laps)*1000;
+                    new_min += compute_distance(player_obj);
                     if (new_min < current_min) {
                         current_min = new_min;
                         current_obj = player_obj;
