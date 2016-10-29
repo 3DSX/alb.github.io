@@ -2,6 +2,7 @@ var targetFPS = 60, delta, delta2, currentTime, oldTime = 0, gameState = 0, game
 var cannon_reloaded = true;
 var upgrades_available = false;
 var max_velocity_samples = 3;
+var pending_fire = false;
 class FakeLocalStorage {
     constructor() {
         this._local_storage = new Map();
@@ -406,7 +407,7 @@ function enterGame() {
     socket && (gameOver = !1,
     showMainMenuText(randomLoadingTexts[UTILS.randInt(0, randomLoadingTexts.length - 1)]),
     socket.emit("respawn", {
-        name: "yourself",
+        name: "hai",
         classIndex: 4
     }),
     mainCanvas.focus())
@@ -746,7 +747,7 @@ function updateMenuLoop(a) {
 }
 var sendFrequency = 1E3 / 24
   , lastSent = 0;
-var cannon_speed = 1/2; // pixels(?) per millisecond
+var cannon_speed = 1/5; // pixels(?) per millisecond
 function compute_distance(other_obj) {
     return MathSQRT(MathPOW(other_obj.localX - player.localX, 2) + MathPOW(other_obj.localY - player.localY, 2));
 }
@@ -805,6 +806,10 @@ function update_position_time(player_obj) {
         enemy_info.last_x = player_obj.x;
         enemy_info.last_y = player_obj.y;
     }
+    if (window.pending_fire) {
+        window.pending_fire = false;
+        socket.emit("3");
+    }
 }
 function get_player_velocity(player_obj) {
     let enemy_info = enemy_database.get(player_obj.sid);
@@ -850,8 +855,7 @@ function get_collision_time(player_obj) {
     let b = 2*(v.x*p0.x + v.y*p0.y);
     let a = Math.pow(v.x, 2) + Math.pow(v.y, 2) - Math.pow(cannon_speed, 2);
     //let c = Math.pow(p0.x, 2) + Math.pow(p0.y, 2);
-    // Soonest time is the subtraction version of the quadratic equation
-    return (-b - Math.sqrt(det))/(2*a)
+    return Math.min((-b + Math.sqrt(det))/(2*a), (-b - Math.sqrt(det))/(2*a));
 }
 function get_aiming_angle(player_obj) {
     let hit_time = get_collision_time(player_obj);
@@ -884,42 +888,44 @@ function sendTarget(a) {
     if (!current_obj) {
         current_obj = player;
     }
-    !gameOver && player && !player.dead && (a || b - lastSent > sendFrequency) && (lastSent = b,
-    (function() {
-        if (!is_tracking && Math.random() > 0.5) {
-            // Make idling position the middle of start line
-            let idle_x = 0;
-            let idle_y = map.heightH - map.trackWidth / 2;
-            target[0] = MathATAN2(idle_y - player.y, idle_x - player.x);
-            target[1] = (Math.random()*10).round(2) + 400;
-            target[0] = target[0].round(2);
-            target[1] = target[1].round(2);
-        }
-        if (is_tracking) {
-            target[1] = MathSQRT(MathPOW(mouseY - screenHeight / 2, 2) + MathPOW(mouseX - screenWidth / 2, 2));
-            target[1] = MathSQRT(MathPOW(current_obj.localY - player.localY, 2) + MathPOW(current_obj.localX - player.localX, 2));
-            target[1] *= 9/10;
-            target[1] *= MathMIN(maxScreenWidth / screenWidth, maxScreenHeight / screenHeight);
-            //target[0] = MathATAN2(mouseY - screenHeight / 2, mouseX - screenWidth / 2);
-            //target[0] = MathATAN2(current_obj.y - player.y, current_obj.x - player.x);
-            target[0] = get_aiming_angle(current_obj);
-            target[0] = target[0].round(2);
-            target[1] = target[1].round(2);
-            if (target[1] > 300) {
-                target[2] = 1;
+    if (!gameOver && player && !player.dead && (a || b - lastSent > sendFrequency)) {
+        lastSent = b;
+        (function() {
+            if (!is_tracking && Math.random() > 0.5) {
+                // Make idling position the middle of start line
+                let idle_x = 0;
+                let idle_y = map.heightH - map.trackWidth / 2;
+                target[0] = MathATAN2(idle_y - player.y, idle_x - player.x);
+                target[1] = (Math.random()*10).round(2) + 400;
+                target[0] = target[0].round(2);
+                target[1] = target[1].round(2);
+            }
+            if (is_tracking) {
+                //target[1] = MathSQRT(MathPOW(mouseY - screenHeight / 2, 2) + MathPOW(mouseX - screenWidth / 2, 2));
+                target[1] = MathSQRT(MathPOW(current_obj.localY - player.localY, 2) + MathPOW(current_obj.localX - player.localX, 2));
+                target[1] *= 9/10;
+                target[1] *= MathMIN(maxScreenWidth / screenWidth, maxScreenHeight / screenHeight);
+                //target[0] = MathATAN2(mouseY - screenHeight / 2, mouseX - screenWidth / 2);
+                //target[0] = MathATAN2(current_obj.y - player.y, current_obj.x - player.x);
+                target[0] = get_aiming_angle(current_obj);
+                target[0] = target[0].round(2);
+                target[1] = target[1].round(2);
+                if (target[1] > 150) {
+                    target[2] = 1;
+                } else {
+                    target[2] = 0;
+                }
             } else {
                 target[2] = 0;
             }
-        } else {
-            target[2] = 0;
+            if (upgrades_available && is_tracking && Math.random() < 0.5) {
+                socket.emit("2", getRandomInt(49, 55)-49);
+            }
+        })();
+        socket.emit("1", target);
+        if (is_tracking && cannon_reloaded && player.spawnProt == 0) {
+            window.pending_fire = true;
         }
-        if (upgrades_available && is_tracking && Math.random() < 0.5) {
-            socket.emit("2", getRandomInt(49, 55)-49);
-        }
-    })(),
-    socket.emit("1", target));
-    if (is_tracking && cannon_reloaded && player.spawnProt == 0) {
-        socket.emit("3");
     }
 }
 var maxNotifs = 2
