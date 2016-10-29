@@ -8,7 +8,10 @@ Planned Features (Suggestions from /v/ and reddit):
 > different types of tracks
 > skins and trails for your vehicle
 
-v0.45 (CURRENT) (26/10/2016):
+v0.46 (CURRENT) (28/10/2016):
+> Added Drift Race Mode (Racing Only)
+
+v0.45 (26/10/2016):
 > Fixed Teleportation Bug
 > Fixed the lag (Please let me know if it still persists)
  ** I still have to fix the physics issue on the circle map

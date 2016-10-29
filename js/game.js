@@ -55,12 +55,13 @@ var MathPI = Math.PI
   , followText = document.getElementById("followText")
   , lobbyKey = document.getElementById("lobbyKey")
   , lobbyKeyText = document.getElementById("lobbyKeyText")
-  , currentModeText = document.getElementById("currentModeText")
   , classIcon = document.getElementById("classIcon")
   , chatbox = document.getElementById("chatbox");
 chatbox.style.display = "block";
 var chatInput = document.getElementById("chatInput")
   , chatList = document.getElementById("chatList")
+  , modeSelector = document.getElementById("modeSelector")
+  , modeListView = document.getElementById("modeListView")
   , instructionsIndex = 0
   , instructionsSpeed = 5500
   , insturctionsCountdown = 0
@@ -82,7 +83,7 @@ if (hasStorage) {
     cid || (cid = UTILS.getUniqueID(),
     localStorage.setItem("sckt", cid))
 }
-var partyKey = null , player = null , gameObjects = [], map = null , currentMode = null , target = [0, 0, 0, 0], viewMult = 1, maxScreenWidth = 1920, maxScreenHeight = 1080, originalScreenWidth = maxScreenWidth, originalScreenHeight = maxScreenHeight, screenWidth, screenHeight;
+var partyKey = null , player = null , modeIndex = 0, modeList, gameObjects = [], map = null , currentMode = null , target = [0, 0, 0, 0], viewMult = 1, maxScreenWidth = 1920, maxScreenHeight = 1080, originalScreenWidth = maxScreenWidth, originalScreenHeight = maxScreenHeight, screenWidth, screenHeight;
 function getURLParam(a, b) {
     b || (b = location.href);
     a = a.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
@@ -174,8 +175,10 @@ function setupSocket() {
         maxScreenHeight = b * c,
         resize())
     });
-    socket.on("mt", function(a) {
-        currentModeText.innerHTML = "Mode: " + a
+    socket.on("mds", function(a, b) {
+        modeList = a;
+        modeSelector.innerHTML = a[b].name + "  <i style='vertical-align: middle;' class='material-icons'>&#xE5C5;</i>";
+        modeIndex = b
     });
     socket.on("c", function(a, b, c) {
         addChatItem(a, b, c)
@@ -883,6 +886,22 @@ function showEndBoard(a) {
             b += "<tr><td style=" + (player && tmpPlayer.id == player.id ? "color:#fff" : "") + "><img src='" + classIcons[tmpPlayer.classIndex] + "' style='width:20px;height:20px;display:inline-block;vertical-align:middle;'> " + tmpPlayer.name + "</td><td>" + tmpPlayer.bestTime + "</td><td>" + tmpPlayer.totalTime + "</td><td>" + tmpPlayer.kills + "</td><td>" + tmpPlayer.deaths + "</td><td>" + tmpPlayer.score + "</td></tr>"
     }
     endBoardTable.innerHTML = b
+}
+function showModeList() {
+    if (modeList)
+        if ("block" == modeListView.style.display)
+            modeListView.style.display = "none";
+        else {
+            for (var a = "", b = 0; b < modeList.length; ++b)
+                a += "<div onclick='changeMode(" + b + ")' class='modeListItem'>" + modeList[b].name + "</div>";
+            modeListView.style.display = "block";
+            modeListView.innerHTML = a
+        }
+}
+function changeMode(a) {
+    modeList && modeList[a] && a !== modeIndex && (modeListView.style.display = "none",
+    modeSelector.innerHTML = modeList[a].name + "<i style='vertical-align: middle;' class='material-icons'>&#xE5C5;</i>",
+    window.location.href = modeList[a].url)
 }
 window.addEventListener("resize", resize);
 function resize() {
