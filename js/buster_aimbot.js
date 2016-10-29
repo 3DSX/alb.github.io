@@ -3,11 +3,11 @@
 
 var cannon_reloaded = true;
 var upgrades_available = false;
-var max_velocity_samples = 1;
+var max_velocity_samples = 2;
 var pending_fire = false;
 var bot_name = "hai";
 var bot_classindex = 4;
-var cannon_speed = 1/5; // pixels(?) per millisecond
+var cannon_speed = 30; // pixels(?) per millisecond
 
 var enemy_database = new Map();
 var ignore_sid = new Set();
@@ -18,8 +18,12 @@ function getRandomInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+function compute_cartesian_distance(x1, y1, x2, y2) {
+    return MathSQRT((x2 -= x1) * x2 + (y2 -= y1) * y2)
+}
+
 function compute_distance(other_obj) {
-    return MathSQRT(MathPOW(other_obj.localX - player.localX, 2) + MathPOW(other_obj.localY - player.localY, 2));
+    return compute_cartesian_distance(other_obj.x, other_obj.y, player.x, player.y)
 }
 
 function chat(data) {
@@ -93,7 +97,8 @@ function get_player_velocity(player_obj) {
     let y_average_num = 0;
     let average_den = 0;
     for (let current_velocity of enemy_info.velocities) {
-        let weight = current_velocity.delta_t/enemy_info.min_delta_t;
+        //let weight = (1/enemy_info.velocities.length)*current_velocity.delta_t/enemy_info.min_delta_t;
+        let weight = 1;
         x_average_num += current_velocity.x*weight;
         y_average_num += current_velocity.y*weight;
         average_den += weight;
@@ -142,6 +147,88 @@ function get_aiming_angle(player_obj) {
     let v = get_player_velocity(player_obj);
     let p0 = get_player_pos_relative(player_obj);
     return Math.atan2(v.y*hit_time + p0.y, v.x*hit_time + p0.x);
+}
+
+class CircleMapIdling {
+    constructor() {
+        this.target_arc_length = 10; // screen-independent pixels
+    }
+
+    x_cart(angle) {
+        return (map.heightH-map.trackWidthH)*MathCOS(angle+MathPI/2);
+    }
+
+    y_cart(angle) {
+        return (map.heightH-map.trackWidthH)*MathSIN(angle+MathPI/2);
+    }
+
+    get_target_position() {
+        let return_values = new Object();
+        let map_radius = map.heightH - map.trackWidthH;
+        // Calculate new position polar angle relative to center of circle map (in radians)
+        let new_angle = MathATAN2(player.y, player.x);
+        new_angle += this.target_arc_length/map_radius;
+        return_values.x = this.x_cart(new_angle);
+        return_values.y = this.y_cart(new_angle);
+        return return_values;
+    }
+}
+var circle_map_idling = new CircleMapIdling();
+
+class SquareMapIdling {
+    constructor() {
+        this.target_arc_length = 10; // screen-independent pixels
+    }
+
+    sign(value) {
+        if (value > 0) {
+            return 1;
+        } else if (value < 0) {
+            return -1;
+        } else {
+            return 0;
+        }
+    }
+
+    x_cart(angle) {
+        return (map.heightH-map.trackWidthH*1/4)*MathSQRT(MathABS(MathCOS(angle)))*this.sign(MathCOS(angle));
+    }
+
+    y_cart(angle) {
+        return (map.heightH-map.trackWidthH*1/4)*MathSQRT(MathABS(MathSIN(angle)))*this.sign(MathSIN(angle));
+    }
+
+    get_target_position() {
+        let return_values = new Object();
+        let map_radius = map.heightH - map.trackWidthH;
+        // Calculate new position polar angle relative to center of circle map (in radians)
+        let new_angle = MathATAN2(player.y, player.x);
+        new_angle += this.target_arc_length/map_radius;
+        return_values.x = this.x_cart(new_angle);
+        return_values.y = this.y_cart(new_angle);
+        return return_values;
+    }
+}
+var square_map_idling = new SquareMapIdling();
+
+function get_idling_target() {
+    let return_values = new Object();
+    if (map.shape == "circle") {
+        let target_position = circle_map_idling.get_target_position();
+        return_values.angle = MathATAN2(target_position.y - player.y, target_position.x - player.x);
+        return_values.distance = 400*compute_cartesian_distance(player.x, player.y, target_position.x, target_position.y);
+    } else if (map.shape == "square") {
+        let target_position = square_map_idling.get_target_position();
+        return_values.angle = MathATAN2(target_position.y - player.y, target_position.x - player.x);
+        return_values.distance = 400*compute_cartesian_distance(player.x, player.y, target_position.x, target_position.y);
+    } else {
+        // Make idling position the middle of start line
+        let idle_x = 0;
+        let idle_y = map.heightH - map.trackWidthH;
+        return_values.angle = MathATAN2(idle_y - player.y, idle_x - player.x);
+        return_values.distance = (Math.random()*10).round(2) + 400;
+    }
+    return return_values;
 }
 
 // Function hooks and overrides
@@ -227,18 +314,16 @@ function override_sendTarget(a) {
     }
     if (!gameOver && player && !player.dead && (a || b - lastSent > sendFrequency)) {
         lastSent = b;
-        if (!is_tracking && Math.random() > 0.5) {
-            // Make idling position the middle of start line
-            let idle_x = 0;
-            let idle_y = map.heightH - map.trackWidth / 2;
-            target[0] = MathATAN2(idle_y - player.y, idle_x - player.x);
-            target[1] = (Math.random()*10).round(2) + 400;
+        if (!is_tracking) {
+            let new_target = get_idling_target();
+            target[0] = new_target.angle;
+            target[1] = new_target.distance;
             target[0] = target[0].round(2);
             target[1] = target[1].round(2);
         }
         if (is_tracking) {
             //target[1] = MathSQRT(MathPOW(mouseY - screenHeight / 2, 2) + MathPOW(mouseX - screenWidth / 2, 2));
-            target[1] = MathSQRT(MathPOW(current_obj.localY - player.localY, 2) + MathPOW(current_obj.localX - player.localX, 2));
+            target[1] = compute_cartesian_distance(player.x, player.y, current_obj.x, current_obj.y);
             target[1] *= 9/10;
             target[1] *= MathMIN(maxScreenWidth / screenWidth, maxScreenHeight / screenHeight);
             //target[0] = MathATAN2(mouseY - screenHeight / 2, mouseX - screenWidth / 2);
