@@ -655,3 +655,50 @@ a:hover {
 .sysMsg {
 	color: #78d545 !important;
 }
+
+.modeHeadr {
+	position: absolute;
+	top: 10px;
+	left: 10px;
+	z-index: 200 !important;
+	color: #d8d8d8;
+	font-size: 20px;
+	font-family: 'regularF';
+}
+
+#modeSelector {
+	position: absolute;
+	top: 10px;
+	left: 70px;
+	z-index: 200 !important;
+	color: #5783e0;
+	font-size: 20px;
+	font-family: 'regularF';
+	cursor: pointer;
+}
+
+#modeSelector:hover {
+	color: #ea6363;
+}
+
+#modeListView {
+	display: none;
+	background-color: rgba(40, 40, 40, 0.5);
+	border-radius: 4px;
+	position: absolute;
+	top: 40px;
+	left: 70px;
+	padding: 8px;
+	z-index: 300;
+}
+
+.modeListItem {
+	color: #5783e0;
+	font-size: 18px;
+	font-family: 'regularF';
+	cursor: pointer;
+}
+
+.modeListItem:hover {
+	color: #ea6363;
+}
