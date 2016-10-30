@@ -151,15 +151,19 @@ function get_aiming_angle(player_obj) {
 
 class CircleMapIdling {
     constructor() {
-        this.target_arc_length = 10; // screen-independent pixels
+        this.target_arc_length = 200; // screen-independent pixels
+    }
+
+    polar_arg(angle) {
+        return angle;
     }
 
     x_cart(angle) {
-        return (map.heightH-map.trackWidthH)*MathCOS(angle+MathPI/2);
+        return (map.heightH-map.trackWidthH)*MathCOS(this.polar_arg(angle));
     }
 
     y_cart(angle) {
-        return (map.heightH-map.trackWidthH)*MathSIN(angle+MathPI/2);
+        return (map.heightH-map.trackWidthH)*MathSIN(this.polar_arg(angle));
     }
 
     get_target_position() {
@@ -167,7 +171,7 @@ class CircleMapIdling {
         let map_radius = map.heightH - map.trackWidthH;
         // Calculate new position polar angle relative to center of circle map (in radians)
         let new_angle = MathATAN2(player.y, player.x);
-        new_angle += this.target_arc_length/map_radius;
+        new_angle -= this.target_arc_length/map_radius;
         return_values.x = this.x_cart(new_angle);
         return_values.y = this.y_cart(new_angle);
         return return_values;
@@ -180,22 +184,53 @@ class SquareMapIdling {
         this.target_arc_length = 10; // screen-independent pixels
     }
 
-    sign(value) {
-        if (value > 0) {
-            return 1;
-        } else if (value < 0) {
-            return -1;
-        } else {
-            return 0;
+    normalize_angle(angle) {
+        angle %= 2*MathPI;
+        if (angle < 0) {
+            angle += 2*MathPI;
         }
+        return angle;
     }
 
     x_cart(angle) {
-        return (map.heightH-map.trackWidthH*1/4)*MathSQRT(MathABS(MathCOS(angle)))*this.sign(MathCOS(angle));
+        angle = this.normalize_angle(angle);
+        if (angle > 7*MathPI/4 || angle <= MathPI/4) {
+            // Right side of map
+            return map.widthH - map.trackWidthH;
+        } else if (angle > MathPI/4 && angle <= 3*MathPI/4) {
+            // Bottom side of map
+            return map.widthH - (angle - MathPI/4)/(MathPI/2)*(map.width - map.trackWidth);
+        } else if (angle > 3*MathPI/4 && angle <= 5*MathPI/4) {
+            // Left side of map
+            return -map.widthH + map.trackWidthH;
+        } else if (angle > 5*MathPI/4 && angle <= 7*MathPI/4) {
+            // Top side of map
+            return (angle - 5*MathPI/4)/(MathPI/2)*(map.width - map.trackWidth) - map.widthH;
+        } else {
+            console.error("Invalid angle (divided by MathPI): " + angle/MathPI);
+        }
     }
 
     y_cart(angle) {
-        return (map.heightH-map.trackWidthH*1/4)*MathSQRT(MathABS(MathSIN(angle)))*this.sign(MathSIN(angle));
+        angle = this.normalize_angle(angle);
+        if (angle > 7*MathPI/4) {
+            // Right side of map, top half
+            return -(2*MathPI - angle)/(MathPI/4)*map.heightH;
+        } else if (angle <= MathPI/4) {
+            // Right side of map, bottom half
+            return (MathPI/4 - angle)/(MathPI/4)*(map.heightH - map.trackWidthH);
+        } else if (angle > MathPI/4 && angle <= 3*MathPI/4) {
+            // Bottom side of map
+            return map.heightH - map.trackWidthH;
+        } else if (angle > 3*MathPI/4 && angle <= 5*MathPI/4) {
+            // Left side of map
+            return (5*MathPI/4 - angle)/(MathPI/2)*(map.height - map.trackWidth) - map.heightH;
+        } else if (angle > 5*MathPI/4 && angle <= 7*MathPI/4) {
+            // Top side of map
+            return -map.heightH + map.trackWidthH;
+        } else {
+            console.error("Invalid angle (divided by MathPI): " + angle/MathPI);
+        }
     }
 
     get_target_position() {
@@ -203,7 +238,7 @@ class SquareMapIdling {
         let map_radius = map.heightH - map.trackWidthH;
         // Calculate new position polar angle relative to center of circle map (in radians)
         let new_angle = MathATAN2(player.y, player.x);
-        new_angle += this.target_arc_length/map_radius;
+        new_angle -= this.target_arc_length/map_radius;
         return_values.x = this.x_cart(new_angle);
         return_values.y = this.y_cart(new_angle);
         return return_values;
@@ -216,11 +251,11 @@ function get_idling_target() {
     if (map.shape == "circle") {
         let target_position = circle_map_idling.get_target_position();
         return_values.angle = MathATAN2(target_position.y - player.y, target_position.x - player.x);
-        return_values.distance = 400*compute_cartesian_distance(player.x, player.y, target_position.x, target_position.y);
+        return_values.distance = 200*compute_cartesian_distance(player.x, player.y, target_position.x, target_position.y);
     } else if (map.shape == "square") {
         let target_position = square_map_idling.get_target_position();
         return_values.angle = MathATAN2(target_position.y - player.y, target_position.x - player.x);
-        return_values.distance = 400*compute_cartesian_distance(player.x, player.y, target_position.x, target_position.y);
+        return_values.distance = 200*compute_cartesian_distance(player.x, player.y, target_position.x, target_position.y);
     } else {
         // Make idling position the middle of start line
         let idle_x = 0;
