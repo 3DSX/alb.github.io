@@ -3,11 +3,11 @@
 
 var cannon_reloaded = true;
 var upgrades_available = false;
-var max_velocity_samples = 2;
+var max_velocity_samples = 1;
 var pending_fire = false;
 var bot_name = "hai";
 var bot_classindex = 4;
-var cannon_speed = 30; // pixels(?) per millisecond
+var cannon_speed = 2; // pixels(?) per millisecond
 
 var enemy_database = new Map();
 var ignore_sid = new Set();
@@ -159,11 +159,11 @@ class CircleMapIdling {
     }
 
     x_cart(angle) {
-        return (map.heightH-map.trackWidthH)*MathCOS(this.polar_arg(angle));
+        return (map.heightH-map.trackWidth*4/5)*MathCOS(this.polar_arg(angle));
     }
 
     y_cart(angle) {
-        return (map.heightH-map.trackWidthH)*MathSIN(this.polar_arg(angle));
+        return (map.heightH-map.trackWidth*4/5)*MathSIN(this.polar_arg(angle));
     }
 
     get_target_position() {
@@ -215,7 +215,7 @@ class SquareMapIdling {
         angle = this.normalize_angle(angle);
         if (angle > 7*MathPI/4) {
             // Right side of map, top half
-            return -(2*MathPI - angle)/(MathPI/4)*map.heightH;
+            return -(angle - 7*MathPI/4)/(MathPI/4)*map.heightH;
         } else if (angle <= MathPI/4) {
             // Right side of map, bottom half
             return (MathPI/4 - angle)/(MathPI/4)*(map.heightH - map.trackWidthH);
@@ -266,6 +266,19 @@ function get_idling_target() {
     return return_values;
 }
 
+function pseudo_enter_key() {
+    enter_event = new Event("keyup");
+    enter_event.keyCode = 13;
+    setTimeout(function() {
+        enter_event = new Event("keyup", {"bubbles": true});
+        enter_event.keyCode = 13;
+        userNameInput.dispatchEvent(enter_event);
+        enter_event = new Event("mouseup", {"bubbles": true});
+        enter_event.button = 1;
+        enterGameButton.dispatchEvent(enter_event);
+    }, 500);
+}
+
 // Function hooks and overrides
 
 function hook_addChatItem(a, b, c) {
@@ -310,16 +323,26 @@ function hook_updateObjectData_condition_b_loop(game_object) {
 }
 
 function hook_leaveGame() {
-    enter_event = new Event("keyup");
-    enter_event.keyCode = 13;
+    pseudo_enter_key();
+}
+
+function hook_kickPlayer(a) {
+    console.log("Got kicked for '" + a + "'. Reconnecting...");
+    window.socket = undefined;
+    window.port = undefined;
+    window.kickReason = false;
+    window.oldTime = 0;
+    window.gameState = 0;
+    window.gameOver = false;
+    var partyKey = null , player = null , modeIndex = 0, modeList = undefined, gameObjects = [], map = null, currentMode = null, target = [0, 0, 0, 0], viewMult = 1, maxScreenWidth = 1920, maxScreenHeight = 1080, originalScreenWidth = maxScreenWidth, originalScreenHeight = maxScreenHeight, screenWidth = undefined, screenHeight = undefined;
     setTimeout(function() {
-        enter_event = new Event("keyup", {"bubbles": true});
-        enter_event.keyCode = 13;
-        userNameInput.dispatchEvent(enter_event);
-        enter_event = new Event("mouseup", {"bubbles": true});
-        enter_event.button = 1;
-        enterGameButton.dispatchEvent(enter_event);
-    }, 1000);
+        hideMainMenuText();
+        window.onload();
+        toggleGameUI(false);
+        toggleMenuUI(true);
+        endBoardContainer.style.display = "none";
+        pseudo_enter_key();
+    }, 10000);
 }
 
 function override_sendTarget(a) {

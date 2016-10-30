@@ -41,21 +41,12 @@ var MathPI = Math.PI
   , leaderboardList = document.getElementById("leaderboardList")
   , boostDisplay = document.getElementById("boostDisplay")
   , lapsDisplay = document.getElementById("lapsDisplay")
-  , upgradesList = document.getElementById("upgradesList")
-  , upgradesInfo = document.getElementById("upgradesInfo")
-  , upgradesHeaders = document.getElementById("upgradesHeaders")
-  , className = document.getElementById("className")
-  , classDescription = document.getElementById("classDescription")
-  , classDiff = document.getElementById("classDiff")
   , endBoardContainer = document.getElementById("endBoardContainer")
   , endBoardTable = document.getElementById("endBoardTable")
   , endBoardTimer = document.getElementById("endBoardTimer")
-  , useAbilityContainer = document.getElementById("useAbilityContainer")
-  , useAbilityName = document.getElementById("useAbilityName")
   , followText = document.getElementById("followText")
   , lobbyKey = document.getElementById("lobbyKey")
   , lobbyKeyText = document.getElementById("lobbyKeyText")
-  , classIcon = document.getElementById("classIcon")
   , chatbox = document.getElementById("chatbox");
 chatbox.style.display = "block";
 var chatInput = document.getElementById("chatInput")
@@ -65,9 +56,9 @@ var chatInput = document.getElementById("chatInput")
   , instructionsIndex = 0
   , instructionsSpeed = 5500
   , insturctionsCountdown = 0
-  , instructionsList = "move your mouse to control your vehicle and click to use your boost;you can earn points to upgrade your vehicle by completing objectives;crashing into walls and other players damages your vehicle;if your vehicle is destroyed, you have to start over again;press Enter to toggle the chat and press C to hide or show the chat;listening to eurobeat improves your ability to play this game".split(";")
+  , instructionsList = ["move your mouse to control your vehicle and click to use your boost", "crashing into walls will deal damage your vehicle", "if your vehicle is destroyed, you have to start over again", "press Enter to toggle the chat and press C to hide or show the chat", "listening to eurobeat improves your ability to play this game"]
   , instructionsIndex = UTILS.randInt(0, instructionsList.length - 1)
-  , randomLoadingTexts = "starting engines...;prepare to drive...;engaging flux capacitors...;pumping gas...;buckle up buckeroo...;playing eurobeat...".split(";");
+  , randomLoadingTexts = ["starting engines...", "prepare to drive...", "pumping gas...", "buckle up...", "playing eurobeat..."];
 function addChatItem(a, b, c) {
     hook_addChatItem(a, b, c);
     var d = document.createElement("li");
@@ -102,7 +93,7 @@ window.onload = function() {
     }
     ;
     console.log("lobby URL IP: " + lobbyURLIP);
-    $.get("http://driftin.io/getIP", {
+    $.get("http://race.driftin.io/getIP", {
         sip: lobbyURLIP
     }, function(a) {
         port = a.port;
@@ -132,16 +123,16 @@ function gameInput(a) {
 function mouseDown(a) {
     a.preventDefault();
     a.stopPropagation();
-    3 !== a.which && 2 !== a.button && (target[2] = 1,
-    sendTarget(!0));
+    target[2] = 1;
+    sendTarget(!0);
     document.activeElement.blur();
     mainCanvas.focus()
 }
 function mouseUp(a) {
     a.preventDefault();
     a.stopPropagation();
-    3 === a.which || 2 === a.button ? socket.emit("3") : (target[2] = 0,
-    sendTarget(!0))
+    target[2] = 0;
+    sendTarget(!0)
 }
 window.onkeyup = function(a) {
     a = a.keyCode ? a.keyCode : a.which;
@@ -150,7 +141,7 @@ window.onkeyup = function(a) {
     mainCanvas.focus(),
     socket.emit("c", chatInput.value),
     chatInput.value = "") : player && !player.dead && (67 == a && (chatbox.style.display = "block" == chatbox.style.display ? "none" : "block"),
-    13 == a ? chatInput.focus() : 49 <= a && 55 >= a ? socket.emit("2", a - 49) : 32 == a ? socket.emit("3") : 81 == a && (target[3] = target[3] ? 0 : 1,
+    13 == a ? chatInput.focus() : 81 == a && (target[3] = target[3] ? 0 : 1,
     sendTarget(!0))))
 }
 ;
@@ -186,8 +177,7 @@ function setupSocket() {
     socket.on("gd", function(a, b) {
         map = a;
         currentMode = b;
-        document.getElementById("notifDisplay").style.display = currentMode.recTime ? "inline-block" : "none";
-        document.getElementById("modeVotes0").innerHTML = "(0)"
+        document.getElementById("notifDisplay").style.display = "inline-block"
     });
     socket.on("spawn", function(a, b) {
         objectExists(a) ? updateOrPushObject(a) : gameObjects.push(a);
@@ -197,9 +187,6 @@ function setupSocket() {
         toggleGameUI(!0),
         mainCanvas.focus());
         hook_socket_callback_spawn(a, b);
-    });
-    socket.on("cv", function(a, b) {
-        document.getElementById("modeVotes" + a).innerHTML = "(" + b + ")"
     });
     socket.on("lk", function(a) {
         partyKey = a
@@ -227,44 +214,10 @@ function setupSocket() {
         leaveGame()))
     });
     socket.on("4", updateFuelDisplay);
-    socket.on("ts", function(a, b) {
-        player && player.team == b && (lapsDisplay.innerHTML = currentMode.objName + " " + a + "/" + currentMode.pointsToWin)
-    });
-    socket.on("5", function(a, b, c) {
+    socket.on("5", function(a) {
         null != a && (lapsDisplay.innerHTML = currentMode.objName + " " + a + "/" + currentMode.pointsToWin,
         currentMode.recTime && addLapInfo(a, 0),
-        1 < a && currentMode.scrText && showNotification(currentMode.scrText));
-        upgradesList.innerHTML = "";
-        upgradesHeaders.innerHTML = "";
-        upgradesInfo.style.display = "none";
-        if (0 < b) {
-            for (var d = a = "", e = 0; e < c.length; ++e) {
-                var d = d + ("<div class='upgradeIndx'>" + (e + 1) + "</div>")
-                  , f = "";
-                c[e].cost && (f += "(" + c[e].cost + ") ");
-                f = 1 == c[e].type ? f + "<span class='yellow'>use item</span>" : c[e].lvl < c[e].max ? f + ("lvl " + c[e].lvl) : "max level";
-                a += "<div class='upgradeItem'><div class='upgradeTxt'>" + c[e].name + "</div><div class='upgradeNum'>" + f + "</div></div>"
-            }
-            upgradesList.innerHTML = a;
-            upgradesHeaders.innerHTML = d;
-            upgradesInfo.innerHTML = "points available (" + b + ")";
-            upgradesInfo.style.display = "inline-block";
-            $("#upgradesInfo").animate({
-                "font-size": "24px"
-            }, 100).animate({
-                "font-size": "19px"
-            }, 100)
-        }
-        hook_socket_callback_5(a, b, c);
-    });
-    socket.on("a", function(a) {
-        a ? (useAbilityContainer.style.display = "inline-block",
-        useAbilityName.innerHTML = a.name,
-        a.cd ? ($("#abilityCooldown").css("height", "75px"),
-        $("#abilityCooldown").animate({
-            height: "0%"
-        }, a.cd)) : $("#abilityCooldown").css("height", "0")) : useAbilityContainer.style.display = "none";
-        hook_socket_callback_a(a);
+        1 < a && currentMode.scrText && showNotification(currentMode.scrText))
     });
     socket.on("6", updateLapInfo);
     socket.on("7", function(a, b, c) {
@@ -282,7 +235,7 @@ function setupSocket() {
         showEndBoard(a)
     });
     socket.on("9", function(a) {
-        endBoardTimer.innerHTML = "Next game " + a
+        endBoardTimer.innerHTML = "Next Race " + a
     });
     socket.on("n", function(a) {
         showNotification(a)
@@ -321,54 +274,7 @@ var updateObjectData = function(a, b) {
   , updateFuelDisplay = function(a) {
     boostDisplay.innerHTML = a + " Boost"
 }
-  , classIndex = 0;
-hasStorage && (classIndex = parseInt(localStorage.getItem("clssI")) || 0);
-var playerClasses = [{
-    name: "Racer",
-    diff: "Speed <span class='greyMenuText'>\u25a0\u25a0\u25a0</span></br>Defense <span class='greyMenuText'>\u25a0\u25a0\u25a0</span></br>Damage <span class='greyMenuText'>\u25a0\u25a0\u25a0</span></br>Handling <span class='greyMenuText'>\u25a0\u25a0\u25a0</span>"
-}, {
-    name: "Bully",
-    diff: "Speed <span class='greyMenuText'>\u25a0</span></br>Defense <span class='greyMenuText'>\u25a0\u25a0\u25a0\u25a0</span></br>Damage <span class='greyMenuText'>\u25a0</span></br>Handling <span class='greyMenuText'>\u25a0\u25a0\u25a0\u25a0</span>"
-}, {
-    name: "Flash",
-    diff: "Speed <span class='greyMenuText'>\u25a0\u25a0\u25a0\u25a0\u25a0\u25a0</span></br>Defense <span class='greyMenuText'>\u25a0</span></br>Damage <span class='greyMenuText'>\u25a0</span></br>Handling <span class='greyMenuText'>\u25a0</span>"
-}, {
-    name: "Hazard",
-    diff: "Speed <span class='greyMenuText'>\u25a0\u25a0</span></br>Defense <span class='greyMenuText'>\u25a0\u25a0\u25a0</span></br>Damage <span class='greyMenuText'>\u25a0\u25a0\u25a0\u25a0\u25a0</span></br>Handling <span class='greyMenuText'>\u25a0\u25a0</span>"
-}, {
-    name: "Buster",
-    diff: "Speed <span class='greyMenuText'>\u25a0</span></br>Defense <span class='greyMenuText'>\u25a0\u25a0</span></br>Damage <span class='greyMenuText'>\u25a0\u25a0\u25a0\u25a0</span></br>Handling <span class='greyMenuText'>\u25a0\u25a0</span></br>Special <span class='greyMenuText'>Cannon</span>"
-}, {
-    name: "Ambulamp",
-    diff: "Speed <span class='greyMenuText'>\u25a0\u25a0\u25a0</span></br>Defense <span class='greyMenuText'>\u25a0\u25a0\u25a0</span></br>Damage <span class='greyMenuText'>\u25a0</span></br>Handling <span class='greyMenuText'>\u25a0\u25a0\u25a0</span></br>Special <span class='greyMenuText'>Healing Orb</span>"
-}, {
-    name: "Piercer",
-    diff: "Speed <span class='greyMenuText'>\u25a0\u25a0\u25a0\u25a0\u25a0</span></br>Defense <span class='greyMenuText'>\u25a0</span></br>Damage <span class='greyMenuText'>\u25a0</span></br>Handling <span class='greyMenuText'>\u25a0\u25a0\u25a0\u25a0</span></br>Special <span class='greyMenuText'>Force Push</span>"
-}, {
-    name: "Sludger",
-    diff: "Speed <span class='greyMenuText'>\u25a0\u25a0\u25a0</span></br>Defense <span class='greyMenuText'>\u25a0\u25a0\u25a0</span></br>Damage <span class='greyMenuText'>\u25a0\u25a0</span></br>Handling <span class='greyMenuText'>\u25a0\u25a0\u25a0\u25a0</span></br>Special <span class='greyMenuText'>Sludge</span>"
-}, {
-    name: "Deprived",
-    diff: "Speed <span class='greyMenuText'>\u25a0</span></br>Defense <span class='greyMenuText'>\u25a0</span></br>Damage <span class='greyMenuText'>\u25a0</span></br>Handling <span class='greyMenuText'>\u25a0</span>"
-}]
-  , unlockedSecret0 = !1;
-hasStorage && localStorage.getItem("scrt0") && unlockSecret(0);
-function unlockSecret(a) {
-    a || unlockedSecret0 || (unlockedSecret0 = 1,
-    playerClasses.push({
-        name: "Star",
-        diff: "Speed <span class='greyMenuText'>\u25a0\u25a0</span></br>Defense <span class='greyMenuText'>\u25a0\u25a0</span></br>Damage <span class='greyMenuText'>\u25a0\u25a0\u25a0</span></br>Handling <span class='greyMenuText'>\u25a0\u25a0\u25a0</span></br>Special <span class='greyMenuText'>Star Power</span>"
-    }),
-    hasStorage && localStorage.setItem("scrt0", 1))
-}
-function changeClass(a) {
-    classIndex += a;
-    classIndex >= playerClasses.length ? classIndex = 0 : 0 > classIndex && (classIndex = playerClasses.length - 1);
-    classIcon.src = classIcons[classIndex];
-    className.innerHTML = playerClasses[classIndex].name;
-    classDiff.innerHTML = playerClasses[classIndex].diff;
-    hasStorage && localStorage.setItem("clssI", classIndex)
-}
+;
 function loadPartyKey() {
     partyKey && (window.history.pushState("", "Driftin.io", "/?l=" + partyKey),
     lobbyKeyText.innerHTML = "send the url above to a friend",
@@ -378,8 +284,7 @@ function enterGame() {
     socket && (gameOver = !1,
     showMainMenuText(randomLoadingTexts[UTILS.randInt(0, randomLoadingTexts.length - 1)]),
     socket.emit("respawn", {
-        name: bot_name,
-        classIndex: bot_classindex
+        name: bot_name
     }),
     mainCanvas.focus())
 }
@@ -425,23 +330,13 @@ var updateGameLoop = function(a) {
         f = b.localY);
         d = (e || 0) - maxScreenWidth / 2 - screenSkX;
         f = (f || 0) - maxScreenHeight / 2 - screenSkY;
-        map && currentMode && (mainContext.lineWidth = 2 * map.tracksidePadding,
+        map && (mainContext.lineWidth = 2 * map.tracksidePadding,
         mainContext.fillStyle = map.wallColor,
         mainContext.strokeStyle = "#ea6363",
         mainContext.lineJoin = "miter",
         mainContext.fillRect(0, 0, maxScreenWidth, maxScreenHeight),
         mainContext.fillStyle = map.backgroundColor,
-        "square" == map.shape ? (mainContext.fillRect(-map.widthH - d, -map.heightH - f, map.width, map.height),
-        mainContext.strokeRect(-map.widthH - d + map.tracksidePadding, -map.heightH - f + map.tracksidePadding, map.width - 2 * map.tracksidePadding, map.height - 2 * map.tracksidePadding),
-        map.trackWidth && (mainContext.fillStyle = "#ea6363",
-        mainContext.fillRect(-map.innerWidthH - d - 2 * map.tracksidePadding, -map.innerHeightH - f - 2 * map.tracksidePadding, map.innerWidth + 4 * map.tracksidePadding, map.innerHeight + 4 * map.tracksidePadding),
-        mainContext.fillStyle = map.wallColor,
-        mainContext.fillRect(-map.innerWidthH - d, -map.innerHeightH - f, map.innerWidth, map.innerHeight)),
-        mainContext.strokeStyle = "#fff",
-        mainContext.setLineDash([100, 100]),
-        mainContext.strokeRect(-map.widthH - d + map.tracksidePadding, -map.heightH - f + map.tracksidePadding, map.width - 2 * map.tracksidePadding, map.height - 2 * map.tracksidePadding),
-        map.trackWidth && mainContext.strokeRect(-map.innerWidthH - d - map.tracksidePadding, -map.innerHeightH - f - map.tracksidePadding, map.innerWidth + 2 * map.tracksidePadding, map.innerHeight + 2 * map.tracksidePadding),
-        mainContext.setLineDash([])) : "circle" == map.shape && (mainContext.beginPath(),
+        mainContext.beginPath(),
         mainContext.arc(-d, -f, map.heightH, 0, 2 * Math.PI),
         mainContext.closePath(),
         mainContext.fill(),
@@ -451,25 +346,25 @@ var updateGameLoop = function(a) {
         mainContext.stroke(),
         map.trackWidth && (mainContext.fillStyle = "#ea6363",
         mainContext.beginPath(),
-        mainContext.arc(-d, -f, map.innerWidthH + 2 * map.tracksidePadding, 0, 2 * Math.PI),
+        mainContext.arc(-d, -f, map.innerHeightH + 2 * map.tracksidePadding, 0, 2 * Math.PI),
         mainContext.closePath(),
         mainContext.fill(),
         mainContext.fillStyle = map.wallColor,
         mainContext.beginPath(),
-        mainContext.arc(-d, -f, map.innerWidthH, 0, 2 * Math.PI),
+        mainContext.arc(-d, -f, map.innerHeightH, 0, 2 * Math.PI),
         mainContext.closePath(),
         mainContext.fill()),
         mainContext.strokeStyle = "#fff",
         mainContext.setLineDash([100, 100]),
         mainContext.beginPath(),
-        mainContext.arc(-d, -f, map.innerWidthH + map.tracksidePadding, 0, 2 * Math.PI),
+        mainContext.arc(-d, -f, map.innerHeightH + map.tracksidePadding, 0, 2 * Math.PI),
         mainContext.closePath(),
         mainContext.stroke(),
         mainContext.beginPath(),
         mainContext.arc(-d, -f, map.heightH - map.tracksidePadding, 0, 2 * Math.PI),
         mainContext.closePath(),
         mainContext.stroke(),
-        mainContext.setLineDash([])),
+        mainContext.setLineDash([]),
         mainContext.fillStyle = map.lineColor,
         mainContext.strokeStyle = map.lineColor,
         map.startLine && mainContext.fillRect(-(map.startLineWidth / 2) - d, map.height / 2 - map.trackWidth - f + 2 * map.tracksidePadding, map.startLineWidth, map.trackWidth - 4 * map.tracksidePadding));
@@ -483,28 +378,11 @@ var updateGameLoop = function(a) {
                 b.deathAlpha -= a / 300,
                 0 >= b.deathAlpha && (b.deathAlpha = 0),
                 k = b.deathAlpha) : k = 1;
-                var m = b.squeeze || 1, g = g + 2.25 * b.scale, l;
+                g += 2.25 * b.scale;
                 playerContext.lineWidth = 11;
                 playerContext.clearRect(-(playerCanvasScale / 2), -(playerCanvasScale / 2), playerCanvasScale, playerCanvasScale);
-                b.isPlayer ? (renderPlayer(playerContext, g, m, b.classIndex, b.special),
-                l = 1 == b.classIndex ? g / 2 : 2 == b.classIndex ? g / 1.8 : 3 == b.classIndex ? g / 1.9 : 4 == b.classIndex ? g / 1.8 : 5 == b.classIndex ? g / 1.9 : 6 == b.classIndex ? g / 1.7 : 7 == b.classIndex ? g / 1.9 : 8 == b.classIndex ? g / 2.1 : 9 == b.classIndex ? g / 1.9 : g / 1.8) : (1 == b.colorIndex ? (playerContext.fillStyle = "#68d65a",
-                playerContext.strokeStyle = "#7bfa6a") : 2 == b.colorIndex ? (playerContext.fillStyle = "#a95ad6",
-                playerContext.strokeStyle = "#c26afa") : (playerContext.fillStyle = "#615959",
-                playerContext.strokeStyle = "#706767"),
-                playerContext.beginPath(),
-                playerContext.arc(0, 0, g / 2, 0, 2 * MathPI, !1),
-                playerContext.fill(),
-                playerContext.stroke());
-                !gameOver && 0 < b.spawnProt && (void 0 == b.flashAlpha && (b.flashAlpha = maxFlashAlpha,
-                b.flashInc = 5E-4),
-                b.flashAlpha += b.flashInc * a,
-                b.flashAlpha > maxFlashAlpha ? (b.flashAlpha = maxFlashAlpha,
-                b.flashInc *= -1) : 0 >= b.flashAlpha && (b.flashAlpha = 0,
-                b.flashInc *= -1),
-                playerContext.globalCompositeOperation = "source-atop",
-                playerContext.fillStyle = "rgba(255, 255, 255, " + b.flashAlpha + ")",
-                playerContext.fillRect(-playerCanvas.width / 2, -playerCanvas.height / 2, playerCanvas.width, playerCanvas.height),
-                playerContext.globalCompositeOperation = "source-over");
+                renderPlayer(playerContext, g, .8, b.classIndex, b.special);
+                g /= 1.8;
                 !gameOver && 0 < b.hitFlash && (b.hitFlash -= .001 * a,
                 0 >= b.hitFlash && (b.hitFlash = 0),
                 playerContext.globalCompositeOperation = "source-atop",
@@ -514,23 +392,25 @@ var updateGameLoop = function(a) {
                 mainContext.save();
                 mainContext.globalAlpha = k;
                 mainContext.translate(e, h);
-                mainContext.rotate((b.sid != player.sid || player.turnSpeed ? b.dir : target[0]) + MathPI / 2);
+                mainContext.rotate((b.sid == player.sid ? target[0] : b.dir) + MathPI / 2);
                 mainContext.drawImage(playerCanvas, -(playerCanvasScale / 2), -(playerCanvasScale / 2));
                 mainContext.restore();
                 b.isPlayer && b.name && !gameOver && (mainContext.font = "36px regularF",
                 mainContext.textAlign = "center",
                 mainContext.strokeStyle = "#5f5f5f",
                 mainContext.lineWidth = 6,
-                380 > mainContext.measureText(b.name).width && (mainContext.strokeText(b.name, e, h - l - 25),
+                380 > mainContext.measureText(b.name).width && (mainContext.strokeText(b.name, e, h - g - 25),
                 mainContext.fillStyle = "#ffffff",
-                mainContext.fillText(b.name, e, h - l - 25)));
-                !gameOver && b.isPlayer && (k = b.health / b.maxHealth,
-                m = 80 * k,
-                g = 80 / 9,
-                mainContext.fillStyle = "#5f5f5f",
-                mainContext.roundRect(e - 40 - 3, h + l + 25 - 3, 86, g + 6, 6).fill(),
-                mainContext.fillStyle = .35 < k ? "#78d545" : "#d55d45",
-                mainContext.roundRect(e - m / 2, h + l + 25, m, g, 6).fill())
+                mainContext.fillText(b.name, e, h - g - 25)));
+                if (!gameOver && b.isPlayer && b.id == player.id) {
+                    k = b.health / b.maxHealth;
+                    var l = 80 * k
+                      , m = 80 / 9;
+                    mainContext.fillStyle = "#5f5f5f";
+                    mainContext.roundRect(e - 40 - 3, h + g + 25 - 3, 86, m + 6, 6).fill();
+                    mainContext.fillStyle = .35 < k ? "#78d545" : "#d55d45";
+                    mainContext.roundRect(e - l / 2, h + g + 25, l, m, 6).fill()
+                }
             }
         updateAnimTexts(a);
         delete b
@@ -538,168 +418,18 @@ var updateGameLoop = function(a) {
 }
 ;
 function renderPlayer(a, b, c, d, e, f) {
-    if (1 == d)
-        a.fillStyle = "#5a68d6",
-        a.strokeStyle = "#6a74fa",
-        f && (b /= 1.5),
-        a.beginPath(),
-        a.arc(0, 0, b / 2, 0, 2 * MathPI, !1),
-        a.fill(),
-        a.stroke();
-    else if (2 == d)
-        f && (b /= 2,
-        c = .8),
-        a.fillStyle = "#a95ad6",
-        a.strokeStyle = "#c26afa",
-        a.lineWidth *= 2,
-        a.beginPath(),
-        a.moveTo(0, -2 * b / 3),
-        a.lineTo(-b / 2 * c, b / 3),
-        a.lineTo(b / 2 * c, b / 3),
-        a.lineTo(0, -2 * b / 3),
-        a.closePath(),
-        a.stroke(),
-        a.fill();
-    else if (3 == d) {
-        f && (b /= 1.3);
-        a.fillStyle = "#3b3838";
-        a.strokeStyle = "#4f4c4c";
-        c = 8;
-        f = MathPI / 2 * 3;
-        d = b / 2;
-        e = MathPI / c;
-        a.beginPath();
-        a.moveTo(0, -d);
-        for (b = 0; b < c; b++)
-            a.lineTo(MathCOS(f) * d, MathSIN(f) * d),
-            f += e,
-            a.lineTo(.8 * MathCOS(f) * d, .8 * MathSIN(f) * d),
-            f += e;
-        a.lineTo(0, -d);
-        a.closePath();
-        a.fill();
-        a.stroke()
-    } else if (4 == d)
-        f && (b /= 2),
-        a.fillStyle = "#757575",
-        a.strokeStyle = "#888888",
-        a.beginPath(),
-        a.moveTo(-b / 4, -b / 1.5),
-        a.lineTo(b / 4, -b / 1.5),
-        a.lineTo(b / 2, b / 2.5),
-        a.lineTo(-b / 2, b / 2.5),
-        a.closePath(),
-        a.fill(),
-        a.stroke();
-    else if (5 == d)
-        d = 80,
-        f && (b /= 2,
-        c = .8,
-        a.lineWidth *= 1.6,
-        d = 70),
-        a.fillStyle = "#e0e0e0",
-        a.strokeStyle = "#f5f5f5",
-        a.fillRect(-b * c / 2, -b / 2, b * c, b),
-        a.strokeRect(-b * c / 2, -b / 2, b * c, b),
-        a.font = d + "px regularF",
-        a.textBaseline = "middle",
-        a.textAlign = "center",
-        a.fillStyle = "#fa6a6a",
-        a.fillText("+", 0, 0);
-    else if (6 == d)
-        f && (b /= 2,
-        c = .8),
-        a.fillStyle = "#e89c42",
-        a.strokeStyle = "#ffab48",
-        a.lineWidth *= 2,
-        a.beginPath(),
-        a.moveTo(0, -2 * b / 3),
-        a.lineTo(-b / 2 * c, b / 3),
-        a.lineTo(0, b / 5),
-        a.lineTo(b / 2 * c, b / 3),
-        a.lineTo(0, -2 * b / 3),
-        a.closePath(),
-        a.stroke(),
-        a.fill();
-    else if (7 == d) {
-        f && (b /= 2);
-        a.fillStyle = "#68d65a";
-        a.strokeStyle = "#7bfa6a";
-        c = 6;
-        e = -Math.PI / c - Math.PI / 2;
-        f = b / 1.3;
-        d = f / 1.5;
-        a.beginPath();
-        a.moveTo(d * Math.cos(e), d * Math.sin(e));
-        for (b = 0; b <= c; b++) {
-            e = 2 * b * Math.PI / c - Math.PI / 2;
-            var h = (2 * b + 1) * Math.PI / c - Math.PI / 2;
-            a.quadraticCurveTo(f * Math.cos(e), f * Math.sin(e), d * Math.cos(h), d * Math.sin(h))
-        }
-        a.fill();
-        a.stroke();
-        a.closePath()
-    } else if (8 == d) {
-        f && (b /= 1.4);
-        a.fillStyle = "#ad8a36";
-        a.strokeStyle = "#cba240";
-        c = b / 2;
-        f = 2 * Math.PI / 6;
-        a.beginPath();
-        a.moveTo(c, 0);
-        for (b = 1; 6 > b; b++)
-            a.lineTo(c * Math.cos(f * b), c * Math.sin(f * b));
-        a.closePath();
-        a.fill();
-        a.stroke()
-    } else if (9 == d) {
-        f && (b /= 1.3);
-        a.fillStyle = e ? "#000" : "#f7ed3e";
-        a.strokeStyle = e ? "#fff" : "#ffff66";
-        c = e ? 4 : 5;
-        f = MathPI / 2 * 3;
-        d = b / 2;
-        e = MathPI / c;
-        a.beginPath();
-        a.moveTo(0, -d);
-        for (b = 0; b < c; b++)
-            a.lineTo(MathCOS(f) * d, MathSIN(f) * d),
-            f += e,
-            a.lineTo(.5 * MathCOS(f) * d, .5 * MathSIN(f) * d),
-            f += e;
-        a.lineTo(0, -d);
-        a.closePath();
-        a.fill();
-        a.stroke()
-    } else
-        f && (b /= 2),
-        a.fillStyle = "#d65a5a",
-        a.strokeStyle = "#fa6a6a",
-        a.lineWidth *= 2,
-        a.beginPath(),
-        a.moveTo(0, -2 * b / 3),
-        a.lineTo(-b / 2 * c, b / 3),
-        a.lineTo(b / 2 * c, b / 3),
-        a.lineTo(0, -2 * b / 3),
-        a.closePath(),
-        a.stroke(),
-        a.fill()
+    a.fillStyle = "#a95ad6";
+    a.strokeStyle = "#c26afa";
+    a.lineWidth *= 2;
+    a.beginPath();
+    a.moveTo(0, -2 * b / 3);
+    a.lineTo(-b / 2 * c, b / 3);
+    a.lineTo(b / 2 * c, b / 3);
+    a.lineTo(0, -2 * b / 3);
+    a.closePath();
+    a.stroke();
+    a.fill()
 }
-for (var classIconScale = 100, classIcons = [], i = 0; 10 > i; ++i) {
-    var tmpCanvas = document.createElement("canvas");
-    tmpCanvas.width = tmpCanvas.height = classIconScale;
-    var tmpContext = tmpCanvas.getContext("2d");
-    tmpContext.lineWidth = 11;
-    tmpContext.translate(tmpCanvas.width / 2, tmpCanvas.height / 2);
-    tmpContext.lineJoin = "round";
-    renderPlayer(tmpContext, classIconScale, 1, i, 0, !0);
-    classIcons.push(tmpCanvas.toDataURL())
-}
-changeClass(0);
-$("#classSelector").bind("contextmenu", function(a) {
-    changeClass(-1);
-    return !1
-});
 function updateMenuLoop(a) {
     1 != gameState && (insturctionsCountdown -= a,
     0 >= insturctionsCountdown && (insturctionsCountdown = instructionsSpeed,
@@ -881,10 +611,10 @@ function showEndBoard(a) {
     endBoardTable.innerHTML = "";
     var b;
     if (currentMode.recTime) {
-        b = "<tr><th>Player</th><th>Best Time</th><th>Total Time</th><th>Kills</th><th>Deaths</th><th>" + currentMode.objName + "</th></tr>";
+        b = "<tr><th>Player</th><th>Best Time</th><th>Total Time</th><th>Deaths</th><th>" + currentMode.objName + "</th></tr>";
         for (var c = 0; c < a.length; ++c)
             tmpPlayer = a[c],
-            b += "<tr><td style=" + (player && tmpPlayer.id == player.id ? "color:#fff" : "") + "><img src='" + classIcons[tmpPlayer.classIndex] + "' style='width:20px;height:20px;display:inline-block;vertical-align:middle;'> " + tmpPlayer.name + "</td><td>" + tmpPlayer.bestTime + "</td><td>" + tmpPlayer.totalTime + "</td><td>" + tmpPlayer.kills + "</td><td>" + tmpPlayer.deaths + "</td><td>" + tmpPlayer.score + "</td></tr>"
+            b += "<tr><td style=" + (player && tmpPlayer.id == player.id ? "color:#fff" : "") + ">" + tmpPlayer.name + "</td><td>" + tmpPlayer.bestTime + "</td><td>" + tmpPlayer.totalTime + "</td><td>" + tmpPlayer.deaths + "</td><td>" + tmpPlayer.score + "</td></tr>"
     }
     endBoardTable.innerHTML = b
 }

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Driftin.io</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=0">
+	<meta name="description" content="Driftin.io is a New IO Game! Race other players from across the world and level up your vehicle.">
+	<script src="js/jquery-2.1.4.min.js"></script>
+	<link href="css/google_material_icons.css" rel="stylesheet">
+	<link rel="shortcut icon" type="image/png" href="img/favicon.png" />
+	<link rel="stylesheet" href="css/main.css" />
+</head>
+<body>
+    <!-- GAME DISPLAY -->
+	<canvas id="mainCanvas" oncontextmenu="return false;"></canvas>
+	<div id="gameUiContainer">
+		<div id="leaderboardContainer">
+			<div id="leaderboardHeader">
+				Leaderboard
+			</div>
+			<div id="leaderboardList">
+			</div>
+		</div>
+		<div class="chatbox" id="chatbox">
+			<ul id="chatList" class="chat-list"></ul>
+			<div>
+				<input id="chatInput" type="text" class="chat-input"
+					placeholder="Send Message..." maxlength="50" />
+			</div>
+		</div>
+		<div id="lapsDisplay"></div>
+		<div id="boostDisplay"></div>
+		<div id="notifDisplay"></div>
+	</div>
+	
+	<!-- END BOARD -->
+	<div id="endBoardContainer">
+		<div class="centerContent">
+			<div id="endBoardTimer"></div>
+			<table id="endBoardTable"></table>
+		</div>
+	</div>
+	
+	<!-- DARKENER -->
+	<div id="darkener">
+	</div>
+
+	<!-- GAME MENU -->
+	<div id="menuContainer">
+		<div class="centerContent">
+			<div id="gameTitle">DRIFTIN<span class="greyMenuText">.IO</span></div>
+			<div id="userInfoContainer">
+				<input type="text" id="userNameInput" placeholder="ENTER NAME" maxlength="14" autofocus />
+				<button type="button" id="enterGameButton">RACE <i class="material-icons">&#xE037;</i></button> 
+			</div>
+			<div id="loadingContainer">
+			</div>
+			<div class="greyMenuText" id="instructionsText">				
+			</div>
+		</div>
+	</div>
+	
+ 	<!-- INFOS -->
+	<div id="infoContainerM">
+		<a target="_blank" href="http://driftinio.wikia.com/wiki/Driftin.io_Wikia">wiki</a>
+		    | <a target="_blank" href="./changes.txt">changelog</a>
+	</div>
+ 	<div id="linksContainer">
+ 	
+		<!-- MODE BUTTON -->
+		<span class='modeHeadr'>mode: </span><div id="modeSelector" onclick="showModeList();">
+		    Loading...
+		</div>
+		<div id="modeListView">
+		</div>
+		
+		<!-- LOBBY KEY -->
+		<div class="spanLink" id="lobbyKey" onclick="loadPartyKey();">
+			<i class="material-icons" style="vertical-align: middle; color:#fff;">&#xE8D3;</i> <span id="lobbyKeyText">create party</span>
+		</div>
+		
+		<!-- FOLLOW BUTTONS -->
+		<div id="followText"><b>藤原 - とうふ - 店</b></div>
+		<div id="twitterFollBt">
+			<a class="twitter-share-button" href="https://twitter.com/intent/tweet?text=Check%20out%20this%20new%20io%20racing%20game%20at%20http://driftin.io%20%23iogames%20%23gaming">Share</a>
+			<a href="https://twitter.com/Sidney_de_Vries" class="twitter-follow-button" data-show-screen-name="false" data-show-count="true">Follow
+			</a>
+		</div>
+		
+		<!-- EXTERNAL LINKS -->
+		<div id="creatorLink">
+			<span class="greyMenuText">game by </span><a target="_blank" href="https://twitter.com/Sidney_de_Vries">sidney de vries</a>
+		</div>
+		<div id="infoLinks">
+			<a href="./privacy.txt">privacy</a> | <a href="https://discord.gg/n4NvyRj ">discord</a> |
+				 <a href="https://www.reddit.com/r/DriftinIO">forum</a> | <a target="_blank" href="http://iogames.space">more games</a>
+		</div>
+	</div>
+
+	<!-- LOAD MAIN SCRIPTS -->
+	<script src="socket.io-1.4.5.js"></script>
+	<script src="js/utils/utils.js"></script>
+	<script src="js/flash_racebot.js"></script>
+	<script src="js/game_race.js"></script>
+</body>
+</html>
