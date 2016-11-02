@@ -4,7 +4,7 @@ Bots for [driftin.io](http://driftin.io) written by InitialFail.
 
 Currently there are two bots. The original bot is a Buster aimbot, and another is a racing bot for Drift Race mode.
 
-Both bots are a WIP. See the Issues page for enhancements that are more than likely to be implemented. See the Projects page for ideas that may or may not make it in.
+Both bots are a WIP. See the Issues page for planned features, bug fixes, and proposed ideas.
 
 ## How to use
 
