@@ -8,13 +8,13 @@ Both bots are a WIP. See the Issues page for planned features, bug fixes, and pr
 
 ## How to use
 
-Theoretically, this bot should work on any modern web browser. All of the files needed to run the bot are already in this repository. They can be invoked by launching the appropriate index HTML file:
+Theoretically, these bots should work on any modern web browser. All of the files needed to run the bots are already in this repository. They can be invoked by launching the appropriate index HTML file:
 * `index.html` is for the Buster aimbot in Free for All mode
 * `index_race.html` is for the Flash racing bot in Drift Race mode
 
-**NOTE**: This bot requires cross-domain requests to work properly. Browsers prevent this by default, but it can be configured. On Chrome/Chromium, you can use the `--disable-web-security` argument. It is also recommended to use the `--user-data-dir` flag, otherwise it will use the default profile (which means that a new browser instance with these flags will not be launched if the browser is already running).
+**NOTE**: These bots requires cross-domain requests to work properly. Browsers prevent this by default, but it can be configured. On Chrome/Chromium, you can use the `--disable-web-security` argument. It is also recommended to use the `--user-data-dir` flag, otherwise it will use the default profile (which means that a new browser instance with these flags will not be launched if the browser is already running).
 
-For your convenience, there are shell scripts for Linux and Chromium that will launch the bot for you:
+For your convenience, there are shell scripts for Linux and Chromium that will launch the bots for you:
 * `start_freeforall.sh` starts the Buster aimbot
 * `start_race.sh` starts the Flash racing bot
 
