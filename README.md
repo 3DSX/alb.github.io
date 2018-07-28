@@ -1,6 +1,6 @@
 # driftin.io bots
 
-Bots for [driftin.io](http://driftin.io) written by InitialFail.
+Bots for [driftin.io](http://driftin.io) written by 3DSX
 
 Currently there are two bots. The original bot is a Buster aimbot, and another is a racing bot for Drift Race mode.
 
